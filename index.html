@@ -1,0 +1,3274 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0038D8" />
+  <title>Ek Kotha — Messaging & Business</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" href="https://i.postimg.cc/qvP4tgS2/20261115-084841.png" />
+  <link rel="apple-touch-icon" href="https://i.postimg.cc/qvP4tgS2/20261115-084841.png" />
+  <style>
+    :root {
+      --bg: #f6f8fd;
+      --surface: #ffffff;
+      --surface-2: #eef3ff;
+      --surface-3: #e0e9ff;
+      --chat-wall: #ebeef7;
+      --text: #0b1530;
+      --text-muted: #5a6a8a;
+      --border: #e1e7f5;
+      --primary: #0038d8;
+      --primary-dark: #0028a3;
+      --primary-light: #2563eb;
+      --primary-soft: #e6eeff;
+      --online: #16a34a;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+      --warn: #d97706;
+      --warn-soft: #fef3c7;
+      --bubble-me: #0038d8;
+      --bubble-me-text: #ffffff;
+      --bubble-them: #ffffff;
+      --shadow: 0 4px 18px rgba(0, 56, 216, 0.07);
+      --radius: 16px;
+      --nav-h: 64px;
+      --header-h: 58px;
+      --msg-font: 0.94rem;
+    }
+
+    [data-theme="dark"] {
+      --bg: #070d1a;
+      --surface: #0f172a;
+      --surface-2: #17233d;
+      --surface-3: #1e2f52;
+      --chat-wall: #091021;
+      --text: #f1f5ff;
+      --text-muted: #93a4c7;
+      --border: #1e2c4a;
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #60a5fa;
+      --primary-soft: #17284d;
+      --online: #22c55e;
+      --danger: #f87171;
+      --danger-soft: #3f1515;
+      --warn: #fbbf24;
+      --warn-soft: #3b2306;
+      --bubble-me: #1d4ed8;
+      --bubble-me-text: #ffffff;
+      --bubble-them: #162038;
+      --shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+    input, textarea, .bubble { user-select: text; }
+
+    html, body {
+      width: 100%; height: 100%; height: 100dvh; overflow: hidden;
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Bengali", sans-serif;
+    }
+
+    #app {
+      width: 100%; height: 100%; height: 100dvh; background: var(--bg);
+      display: flex; flex-direction: column; position: relative; overflow: hidden;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Top App Bar */
+    .topbar {
+      flex: 0 0 auto; z-index: 30; height: var(--header-h);
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; gap: 6px;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+    .topbar-brand { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1; cursor: pointer; }
+    .topbar-logo-img { width: 34px; height: 34px; border-radius: 50%; object-fit: contain; background: #fff; flex-shrink: 0; }
+    .topbar-title { font-size: 1.12rem; font-weight: 800; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    [data-theme="dark"] .topbar-title { color: var(--text); }
+    .topbar-title.chat-mode { font-size: 1rem; color: var(--text); }
+    .topbar-sub { font-size: 0.74rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #topbar-actions { flex-shrink: 0; }
+
+    .icon-btn {
+      width: 38px; height: 38px; border-radius: 50%; border: none; background: transparent;
+      color: var(--text); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; position: relative;
+    }
+    .icon-btn:active { background: var(--surface-2); }
+    .icon-btn svg { width: 21px; height: 21px; }
+
+    .topbar-avatar {
+      width: 36px; height: 36px; border-radius: 50%; color: #fff; font-weight: 700;
+      font-size: 0.88rem; display: grid; place-items: center; flex-shrink: 0; background: var(--primary);
+    }
+
+    /* Scrollable Screens */
+    .screen {
+      display: none; flex-direction: column; flex: 1 1 auto; min-height: 0; width: 100%;
+      overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+      padding: 14px 14px; padding-bottom: calc(var(--nav-h) + 28px);
+      animation: fadeIn 0.16s ease;
+    }
+    .screen > * { flex-shrink: 0; }
+    .screen.no-nav { padding-bottom: 28px; }
+    .screen.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Splash Loading Screen */
+    #screen-splash {
+      padding: 24px; align-items: center; justify-content: space-between;
+      background: var(--surface); text-align: center;
+    }
+    .splash-center { margin: auto 0; display: flex; flex-direction: column; align-items: center; }
+    .splash-logo {
+      width: 112px; height: 112px; border-radius: 28px; overflow: hidden;
+      box-shadow: 0 12px 30px rgba(0, 56, 216, 0.22); margin-bottom: 18px; background: #fff;
+    }
+    .splash-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .splash-bar {
+      width: 140px; height: 4px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin-top: 14px;
+    }
+    .splash-bar-fill {
+      width: 45%; height: 100%; background: var(--primary); border-radius: 99px;
+      animation: splashSlide 1.1s infinite ease-in-out;
+    }
+    @keyframes splashSlide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(240%); }
+    }
+
+    /* Welcome & Auth */
+    .auth-hero { margin: auto 0; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 12px 4px; }
+    .ek-logo-wrap {
+      width: 104px; height: 104px; margin-bottom: 14px; border-radius: 26px; overflow: hidden;
+      box-shadow: 0 12px 28px rgba(0, 56, 216, 0.22); background: #fff;
+    }
+    .ek-logo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .auth-card {
+      width: 100%; max-width: 440px; margin: 0 auto; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 20px; padding: 18px; box-shadow: var(--shadow);
+    }
+
+    /* Home Screen */
+    #screen-home { padding: 0; padding-bottom: calc(var(--nav-h) + 84px); }
+    .wa-search-wrap { padding: 10px 14px 6px; background: var(--surface); }
+    .wa-search-box {
+      display: flex; align-items: center; gap: 10px; background: var(--surface-2);
+      border-radius: 99px; padding: 9px 14px; color: var(--text-muted);
+    }
+    .wa-search-box input { border: none; background: transparent; padding: 0; font-size: 0.94rem; color: var(--text); width: 100%; }
+
+    .wa-filters {
+      display: flex; gap: 8px; padding: 8px 14px 10px; background: var(--surface);
+      border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none;
+    }
+    .wa-filters::-webkit-scrollbar { display: none; }
+    .filter-chip {
+      border: none; background: var(--surface-2); color: var(--text-muted); padding: 7px 14px;
+      border-radius: 99px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; cursor: pointer;
+    }
+    .filter-chip.active { background: var(--primary-soft); color: var(--primary); }
+    [data-theme="dark"] .filter-chip.active { color: var(--primary-light); }
+
+    .wa-banner-strip {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 11px 14px; background: var(--surface); border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .wa-banner-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+    .wa-banner-ico {
+      width: 36px; height: 36px; border-radius: 12px; background: var(--primary-soft);
+      color: var(--primary); display: grid; place-items: center; flex-shrink: 0;
+    }
+    .wa-chat-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+      background: var(--surface); border-bottom: 1px solid var(--border); cursor: pointer;
+      transition: background 0.12s;
+    }
+    .wa-chat-row:active { background: var(--surface-2); }
+
+    .fab {
+      position: fixed; right: 18px; bottom: calc(var(--nav-h) + 18px);
+      width: 56px; height: 56px; border-radius: 18px; border: none; background: var(--primary); color: #fff;
+      display: grid; place-items: center; box-shadow: 0 8px 24px rgba(0, 56, 216, 0.35); cursor: pointer; z-index: 25;
+    }
+    .fab:active { transform: scale(0.93); }
+    .fab svg { width: 24px; height: 24px; }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      flex: 0 0 auto; height: var(--nav-h); width: 100%;
+      background: var(--surface); border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around; align-items: center; z-index: 30;
+    }
+    .nav-item {
+      flex: 1; height: var(--nav-h); border: none; background: transparent; color: var(--text-muted);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px; font-size: 0.72rem; font-weight: 600; cursor: pointer; position: relative; min-width: 0;
+    }
+    .nav-pill { width: 48px; height: 28px; border-radius: 99px; display: grid; place-items: center; }
+    .nav-item.active { color: var(--primary); font-weight: 700; }
+    .nav-item.active .nav-pill { background: var(--primary-soft); }
+    [data-theme="dark"] .nav-item.active { color: var(--primary-light); }
+    .nav-item svg { width: 20px; height: 20px; }
+
+    .badge {
+      position: absolute; top: 5px; right: calc(50% - 24px); background: var(--primary); color: #fff;
+      font-size: 0.65rem; font-weight: 700; min-width: 17px; height: 17px;
+      border-radius: 99px; padding: 0 5px; display: grid; place-items: center;
+    }
+    .topbar .badge { top: 2px; right: 2px; background: var(--danger); }
+
+    /* Cards & Controls */
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 15px; margin-bottom: 12px; box-shadow: var(--shadow);
+    }
+    .card-soft {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 13px; margin-bottom: 12px;
+    }
+    .btn {
+      width: 100%; padding: 12px 15px; border-radius: 13px; border: none; background: var(--primary); color: #fff;
+      font-weight: 700; font-size: 0.94rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn:active { transform: scale(0.98); }
+    .btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .btn-sm { width: auto; padding: 8px 12px; font-size: 0.82rem; border-radius: 10px; }
+    .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+    [data-theme="dark"] .btn-outline { color: var(--primary-light); border-color: var(--primary-light); }
+    .btn-soft { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 5px; }
+    input, textarea, select {
+      width: 100%; padding: 11px 13px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: var(--surface); color: var(--text); font-size: 0.95rem; font-family: inherit; outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+    textarea { resize: vertical; min-height: 76px; }
+
+    .avatar {
+      width: 46px; height: 46px; border-radius: 50%; color: #fff; font-weight: 700;
+      display: grid; place-items: center; flex-shrink: 0; position: relative; font-size: 0.98rem;
+    }
+    .avatar-lg { width: 76px; height: 76px; font-size: 1.65rem; }
+    .online-dot {
+      width: 12px; height: 12px; border-radius: 50%; background: var(--online);
+      border: 2px solid var(--surface); position: absolute; bottom: 0; right: 0;
+    }
+
+    .list-item {
+      display: flex; align-items: center; gap: 11px; padding: 11px 12px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 15px; margin-bottom: 9px; cursor: pointer;
+    }
+    .list-item:active { background: var(--surface-2); }
+    .list-body { flex: 1; min-width: 0; }
+    .list-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .list-title { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 5px; }
+    .list-sub { font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+    .msg-meta { font-size: 0.72rem; color: var(--text-muted); flex-shrink: 0; margin-top: 2px; }
+
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 99px;
+      font-size: 0.72rem; font-weight: 700; background: var(--primary-soft); color: var(--primary); flex-shrink: 0;
+    }
+    [data-theme="dark"] .pill { color: var(--primary-light); }
+    .unread-pill {
+      background: var(--primary); color: #fff; font-size: 0.72rem; font-weight: 700;
+      min-width: 20px; height: 20px; border-radius: 99px; padding: 0 6px; display: grid; place-items: center; flex-shrink: 0;
+    }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; text-align: center; }
+    .stat-val { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
+    .stat-lbl { font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* FULL-HEIGHT MESSAGING SCREEN */
+    #screen-chat-room {
+      padding: 0; flex: 1 1 auto; min-height: 0; height: 100%; overflow: hidden;
+      background-color: var(--chat-wall);
+      background-image: radial-gradient(rgba(0, 56, 216, 0.07) 1.2px, transparent 1.2px);
+      background-size: 18px 18px; position: relative;
+    }
+
+    .chat-messages {
+      flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 6px;
+    }
+
+    .date-pill {
+      align-self: center; background: var(--surface); color: var(--text-muted);
+      font-size: 0.72rem; font-weight: 700; padding: 4px 12px; border-radius: 99px;
+      margin: 6px 0; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
+    .msg-row { display: flex; flex-direction: column; max-width: 84%; position: relative; transition: background 0.3s; }
+    .msg-row.me { align-self: flex-end; align-items: flex-end; }
+    .msg-row.them { align-self: flex-start; align-items: flex-start; }
+    .msg-row.flash { background: rgba(37, 99, 235, 0.18); border-radius: 12px; }
+
+    .bubble {
+      padding: 8px 12px 6px; border-radius: 15px; font-size: var(--msg-font);
+      line-height: 1.42; word-break: break-word; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      cursor: pointer; min-width: 84px; transition: transform 0.1s;
+    }
+    .bubble:active { transform: scale(0.985); }
+    .me .bubble { background: var(--bubble-me); color: var(--bubble-me-text); border-top-right-radius: 3px; }
+    .them .bubble { background: var(--bubble-them); color: var(--text); border-top-left-radius: 3px; }
+
+    .msg-sender-name { font-size: 0.74rem; font-weight: 700; color: var(--primary); margin-bottom: 3px; }
+    [data-theme="dark"] .msg-sender-name { color: var(--primary-light); }
+
+    .msg-deleted { font-style: italic; opacity: 0.78; display: inline-flex; align-items: center; gap: 5px; font-size: 0.86rem; }
+    .msg-onetime-pill {
+      display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 0.88rem; padding: 4px 2px;
+    }
+    .msg-link { text-decoration: underline; font-weight: 600; word-break: break-all; }
+    .me .msg-link { color: #dbeafe; }
+    .them .msg-link { color: var(--primary); }
+    [data-theme="dark"] .them .msg-link { color: var(--primary-light); }
+
+    .video-link-tag {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 700;
+      padding: 2px 7px; border-radius: 6px; margin-top: 4px; background: rgba(0, 0, 0, 0.14);
+    }
+    .them .video-link-tag { background: var(--primary-soft); color: var(--primary); }
+
+    .reply-quote {
+      font-size: 0.77rem; padding: 5px 8px; border-radius: 8px; margin-bottom: 5px;
+      background: rgba(255, 255, 255, 0.16); border-left: 3px solid #93c5fd; cursor: pointer;
+    }
+    .them .reply-quote { background: var(--surface-2); border-left-color: var(--primary); }
+
+    .bubble-footer { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 3px; font-size: 0.66rem; opacity: 0.82; }
+    .bubble-footer svg { width: 13px; height: 13px; }
+
+    .scroll-bottom-btn {
+      position: absolute; right: 14px; bottom: 72px;
+      width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); display: grid; place-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; z-index: 15;
+    }
+
+    .chat-composer {
+      flex: 0 0 auto; width: 100%; padding: 6px 10px 10px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .composer-pill {
+      display: flex; gap: 6px; align-items: center;
+      background: var(--surface); border-radius: 26px; padding: 4px 6px 4px 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    }
+    .composer-pill input {
+      flex: 1; border: none; background: transparent; padding: 9px 4px; font-size: 0.95rem; color: var(--text); min-width: 0;
+    }
+    .onetime-btn {
+      width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--border);
+      background: var(--surface-2); color: var(--text-muted); font-size: 0.72rem; font-weight: 800;
+      display: grid; place-items: center; cursor: pointer; flex-shrink: 0;
+    }
+    .onetime-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .send-btn {
+      width: 42px; height: 42px; border-radius: 50%; border: none;
+      background: var(--primary); color: #fff; display: grid; place-items: center; cursor: pointer; flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(0, 56, 216, 0.3);
+    }
+    .send-btn svg { width: 19px; height: 19px; }
+
+    .reply-banner {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--surface); padding: 8px 12px; border-radius: 14px;
+      border-left: 4px solid var(--primary); font-size: 0.82rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .quick-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+    .chip {
+      white-space: nowrap; padding: 5px 11px; border-radius: 99px; font-size: 0.76rem; font-weight: 600;
+      background: var(--surface); border: 1px solid var(--border); color: var(--text); cursor: pointer;
+    }
+
+    /* Settings Card & Toggle Switches */
+    .settings-group {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; overflow: hidden; margin-bottom: 14px; box-shadow: var(--shadow);
+      flex-shrink: 0;
+    }
+    .setting-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 13px 14px; border-bottom: 1px solid var(--border); cursor: pointer; min-height: 60px;
+    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-row:active { background: var(--surface-2); }
+    .setting-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+    .setting-left > div:last-child { min-width: 0; flex: 1; }
+    .setting-ico {
+      width: 38px; height: 38px; border-radius: 12px; background: var(--primary-soft);
+      color: var(--primary); display: grid; place-items: center; flex-shrink: 0;
+    }
+    [data-theme="dark"] .setting-ico { color: var(--primary-light); }
+    .setting-ico svg { width: 19px; height: 19px; }
+
+    .switch {
+      width: 46px; height: 26px; border-radius: 99px; background: var(--border);
+      position: relative; transition: background 0.2s; flex-shrink: 0; border: none; cursor: pointer;
+    }
+    .switch::after {
+      content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px;
+      border-radius: 50%; background: #fff; transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .switch.on { background: var(--primary); }
+    .switch.on::after { transform: translateX(20px); }
+
+    /* Call Overlays */
+    .overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: linear-gradient(180deg, #061333 0%, #03091a 100%);
+      color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      padding: 46px 20px;
+    }
+    .video-stage { position: relative; width: 100%; flex: 1; background: #000; border-radius: 20px; overflow: hidden; margin: 14px 0; }
+    #remote-video { width: 100%; height: 100%; object-fit: cover; }
+    #local-video {
+      position: absolute; bottom: 12px; right: 12px; width: 105px; height: 150px;
+      object-fit: cover; border-radius: 14px; border: 2px solid #3b82f6; background: #111;
+    }
+    .call-controls { display: flex; gap: 18px; align-items: center; justify-content: center; }
+    .call-btn {
+      width: 58px; height: 58px; border-radius: 50%; border: none; color: #fff;
+      background: rgba(255, 255, 255, 0.16); cursor: pointer; display: grid; place-items: center;
+    }
+    .call-btn svg { width: 24px; height: 24px; }
+    .call-btn.accept { background: #16a34a; }
+    .call-btn.hangup { background: #dc2626; }
+    .call-btn.active { background: #ffffff; color: #0b1530; }
+
+    /* Bottom Action Sheet & Modals */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 150; background: rgba(7, 13, 26, 0.6);
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    .modal-center { align-items: center; padding: 20px; }
+    .sheet {
+      width: 100%; max-width: 560px; background: var(--surface);
+      border-top-left-radius: 22px; border-top-right-radius: 22px;
+      padding: 14px 16px 24px; max-height: 78vh; overflow-y: auto;
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.22); animation: slideUp 0.18s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(36px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .sheet-handle { width: 42px; height: 4px; border-radius: 99px; background: var(--border); margin: 0 auto 12px; }
+    .sheet-title { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); padding: 4px 12px 10px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+    .sheet-item {
+      width: 100%; padding: 13px 12px; border: none; background: transparent; color: var(--text);
+      font-size: 0.96rem; font-weight: 600; border-radius: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; text-align: left;
+    }
+    .sheet-item:active { background: var(--surface-2); }
+    .sheet-item.danger { color: var(--danger); }
+    .sheet-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+    #toast {
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 220;
+      background: #0b1530; color: #ffffff; padding: 11px 18px; border-radius: 14px;
+      font-size: 0.86rem; font-weight: 600; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
+      max-width: 92%; text-align: center; cursor: pointer;
+    }
+
+    .section-title { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin: 12px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .muted { color: var(--text-muted); font-size: 0.84rem; }
+    .text-center { text-align: center; }
+
+    @media (max-width: 360px) {
+      .grid-3 { grid-template-columns: 1fr; }
+      .btn-sm { padding: 7px 10px; font-size: 0.78rem; }
+    }
+
+    @media (min-width: 768px) {
+      #app { max-width: 680px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+      .fab { right: calc(50% - 320px); }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- TOP APP BAR -->
+  <header id="topbar" class="topbar hidden">
+    <div class="topbar-left">
+      <button id="btn-back" class="icon-btn hidden" aria-label="Back"></button>
+      <div id="topbar-logo-wrap" class="topbar-brand">
+        <img id="topbar-logo-img" class="topbar-logo-img" src="https://i.postimg.cc/qvP4tgS2/20261115-084841.png" alt="Ek Kotha" />
+        <div id="topbar-avatar" class="topbar-avatar hidden">EK</div>
+        <div style="min-width:0;flex:1;">
+          <div class="topbar-title" id="topbar-title">Ek Kotha</div>
+          <div class="topbar-sub hidden" id="topbar-sub"></div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row" id="topbar-actions" style="gap:2px;flex-wrap:nowrap;">
+      <button class="icon-btn hidden" id="btn-chat-audio" aria-label="Audio Call"></button>
+      <button class="icon-btn hidden" id="btn-chat-video" aria-label="Video Call"></button>
+      <button class="icon-btn hidden" id="btn-chat-more" aria-label="Options"></button>
+      <button class="icon-btn" id="btn-top-search" aria-label="Find People"></button>
+      <button class="icon-btn" id="btn-top-notif" aria-label="Notifications">
+        <span id="ico-top-bell"></span>
+        <span class="badge hidden" id="notif-badge">0</span>
+      </button>
+      <button class="icon-btn" id="btn-top-settings" aria-label="Settings"></button>
+    </div>
+  </header>
+
+  <!-- 0. SPLASH SCREEN -->
+  <section id="screen-splash" class="screen no-nav active">
+    <div class="splash-center">
+      <div class="splash-logo" id="splash-logo-wrap">
+        <img id="splash-logo-img" src="https://i.postimg.cc/qvP4tgS2/20261115-084841.png" alt="Ek Kotha" />
+      </div>
+      <h2 style="font-size:1.6rem;font-weight:800;color:var(--primary);">Ek Kotha</h2>
+      <div class="splash-bar"><div class="splash-bar-fill"></div></div>
+    </div>
+    <div style="padding-bottom:14px;">
+      <div class="muted" style="font-size:0.78rem;">Fast Messaging & Business</div>
+      <div style="font-weight:800;color:var(--primary);letter-spacing:0.4px;font-size:0.9rem;">BANGLADESH</div>
+    </div>
+  </section>
+
+  <!-- 1. WELCOME SCREEN -->
+  <section id="screen-welcome" class="screen no-nav">
+    <div class="auth-hero">
+      <div class="ek-logo-wrap" id="welcome-logo">
+        <img id="welcome-logo-img" src="https://i.postimg.cc/qvP4tgS2/20261115-084841.png" alt="Ek Kotha Logo" />
+      </div>
+      <h1 style="font-size:2rem;font-weight:800;letter-spacing:-0.4px;margin-bottom:8px;" data-i18n="appName">Ek Kotha</h1>
+      <p class="muted" style="max-width:340px;margin-bottom:22px;line-height:1.5;" data-i18n="welcomeTag">
+        Fast, lightweight text messaging, video links, crystal-clear calls, and group tools built for Bangladesh.
+      </p>
+      <div class="auth-card">
+        <div class="card-soft text-center" style="margin-bottom:18px;">
+          <div style="font-weight:700;font-size:0.94rem;margin-bottom:4px;color:var(--primary);" data-i18n="textOnlyBadge">Text, Video Links, Groups & Live Calls</div>
+          <div class="muted" data-i18n="textOnlyDesc">Zero photo or file uploads. Safe and fast on mobile data.</div>
+        </div>
+        <button class="btn" id="go-register" data-i18n="createAccount" style="margin-bottom:10px;">Create Account</button>
+        <button class="btn btn-outline" id="go-login" data-i18n="login">Login</button>
+        <div class="btn-row" style="justify-content:center;margin-top:16px;">
+          <button class="btn btn-sm btn-soft" id="welcome-lang-btn"></button>
+          <button class="btn btn-sm btn-soft" id="welcome-theme-btn"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. REGISTRATION SCREEN -->
+  <section id="screen-register" class="screen no-nav">
+    <div class="btn-row" style="margin-bottom:16px;">
+      <button class="icon-btn" id="reg-back-ico"></button>
+      <h2 style="font-size:1.3rem;" data-i18n="createAccount">Create Account</h2>
+    </div>
+    <div class="auth-card">
+      <form id="form-register">
+        <div class="field"><label data-i18n="displayName">Display Name</label><input id="reg-name" required maxlength="50" placeholder="e.g. Rahim Uddin" /></div>
+        <div class="field"><label data-i18n="username">Username (lowercase, no spaces)</label><input id="reg-username" required pattern="[a-z0-9_]{3,20}" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="rahim_bd" /></div>
+        <div class="field"><label data-i18n="email">Email</label><input id="reg-email" type="email" required autocapitalize="none" autocorrect="off" placeholder="rahim@email.com" /></div>
+        <div class="field"><label data-i18n="password">Password (min 6 chars)</label><input id="reg-pass" type="password" required minlength="6" /></div>
+        <button class="btn" id="btn-register-submit" type="submit" data-i18n="registerBtn">Register</button>
+      </form>
+      <p class="muted" style="margin-top:12px;font-size:0.78rem;line-height:1.4;">
+        Phone OTP requires Firebase Phone Auth & reCAPTCHA billing configuration. Email & Password login is active.
+      </p>
+    </div>
+  </section>
+
+  <!-- 3. LOGIN SCREEN -->
+  <section id="screen-login" class="screen no-nav">
+    <div class="btn-row" style="margin-bottom:16px;">
+      <button class="icon-btn" id="login-back-ico"></button>
+      <h2 style="font-size:1.3rem;" data-i18n="login">Login</h2>
+    </div>
+    <div class="auth-card">
+      <form id="form-login">
+        <div class="field"><label data-i18n="email">Email</label><input id="login-email" type="email" required autocapitalize="none" autocorrect="off" /></div>
+        <div class="field"><label data-i18n="password">Password</label><input id="login-pass" type="password" required /></div>
+        <button class="btn" id="btn-login-submit" type="submit" data-i18n="login">Login</button>
+      </form>
+      <button class="btn btn-soft" id="btn-forgot-pass" style="margin-top:10px;" data-i18n="forgotPass">Forgot Password?</button>
+    </div>
+  </section>
+
+  <!-- 4. HOME (CHATS & GROUPS FEED) -->
+  <section id="screen-home" class="screen">
+    <div class="wa-search-wrap">
+      <div class="wa-search-box">
+        <span id="ico-home-search"></span>
+        <input id="chat-search-input" placeholder="Search Ek Kotha chats or groups..." />
+      </div>
+    </div>
+
+    <div class="wa-filters" id="home-filters">
+      <button class="filter-chip active" data-filter="all" data-i18n="filterAll">All</button>
+      <button class="filter-chip" data-filter="unread" id="chip-unread">Unread</button>
+      <button class="filter-chip" data-filter="groups">Groups</button>
+      <button class="filter-chip" data-filter="business" data-i18n="business">Business</button>
+    </div>
+
+    <div id="push-prompt-card" class="wa-banner-strip hidden" style="background:var(--primary-soft);">
+      <div class="wa-banner-left">
+        <div class="wa-banner-ico" id="ico-banner-bell"></div>
+        <div style="min-width:0;">
+          <div style="font-weight:700;font-size:0.88rem;" data-i18n="enablePushTitle">Enable Notifications</div>
+          <div class="list-sub" data-i18n="enablePushDesc">Get alerts for new messages and calls</div>
+        </div>
+      </div>
+      <button class="btn btn-sm" id="btn-enable-push" data-i18n="enableBtn">Enable</button>
+    </div>
+
+    <div class="wa-banner-strip" id="home-announce-strip" data-nav="screen-notifications">
+      <div class="wa-banner-left">
+        <div class="wa-banner-ico" id="ico-banner-announce"></div>
+        <div style="min-width:0;flex:1;">
+          <div style="font-weight:700;font-size:0.9rem;" data-i18n="announcements">Announcements & Updates</div>
+          <div class="list-sub" id="home-latest-announce">No new announcements</div>
+        </div>
+      </div>
+      <span id="ico-banner-chev" style="color:var(--text-muted);"></span>
+    </div>
+
+    <div id="chat-list-container"></div>
+
+    <button class="fab" id="fab-new-chat" data-nav="screen-search" aria-label="New Chat or Group"></button>
+  </section>
+
+  <!-- 5. FULL-HEIGHT MESSAGING SCREEN -->
+  <section id="screen-chat-room" class="screen no-nav">
+    <div class="text-center" style="padding:6px 0 0;flex:0 0 auto;">
+      <button class="btn btn-sm btn-soft hidden" id="btn-load-older" data-i18n="loadOlder">Load older messages</button>
+    </div>
+    <div class="chat-messages" id="chat-messages-box"></div>
+    <button class="scroll-bottom-btn hidden" id="btn-scroll-bottom" aria-label="Scroll to latest"></button>
+    <div class="chat-composer">
+      <div id="chat-biz-label-bar" class="quick-chips hidden"></div>
+      <div id="chat-quick-replies" class="quick-chips hidden"></div>
+      <div id="reply-preview" class="reply-banner hidden">
+        <div style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          <strong id="reply-preview-name"></strong>: <span id="reply-preview-text"></span>
+        </div>
+        <button class="icon-btn" id="btn-cancel-reply" style="width:28px;height:28px;"></button>
+      </div>
+      <div id="chat-blocked-notice" class="muted text-center hidden" style="padding:8px;background:var(--surface);border-radius:14px;">
+        Messaging unavailable (blocked).
+      </div>
+      <form id="form-send-msg" class="composer-pill">
+        <button type="button" id="btn-onetime-toggle" class="onetime-btn" title="One-Time Message (View Once)">1x</button>
+        <input id="msg-input" autocomplete="off" maxlength="2000" placeholder="Message or paste a video link..." />
+        <button type="submit" class="send-btn" id="btn-send-msg" aria-label="Send"></button>
+      </form>
+    </div>
+  </section>
+
+  <!-- 5B. USER-TO-USER PROFILE VISIT SCREEN -->
+  <section id="screen-user-profile" class="screen no-nav">
+    <div class="card text-center">
+      <div class="avatar avatar-lg" id="up-avatar" style="margin:0 auto 12px;">
+        <span id="up-avatar-txt">U</span>
+        <span id="up-online-dot" class="online-dot hidden" style="width:16px;height:16px;border-width:3px;"></span>
+      </div>
+      <h2 id="up-name" style="font-size:1.35rem;word-break:break-word;">User</h2>
+      <div id="up-username" class="muted" style="margin-top:2px;">@username</div>
+      <div id="up-presence" class="pill" style="margin-top:8px;">Offline</div>
+      <p id="up-status" class="muted" style="margin-top:12px;line-height:1.45;word-break:break-word;">Available on Ek Kotha</p>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:12px;">
+      <button class="btn" id="btn-up-chat"></button>
+      <button class="btn btn-soft" id="btn-up-audio"></button>
+      <button class="btn btn-soft" id="btn-up-video"></button>
+    </div>
+
+    <div class="settings-group">
+      <div class="setting-row" id="btn-up-block">
+        <div class="setting-left">
+          <div class="setting-ico" id="up-ico-block" style="background:var(--danger-soft);color:var(--danger);"></div>
+          <div>
+            <div class="list-title" id="up-block-title">Block User</div>
+            <div class="list-sub" id="up-block-sub">Stop receiving messages or calls</div>
+          </div>
+        </div>
+        <span class="ico-chev" style="color:var(--text-muted);"></span>
+      </div>
+      <div class="setting-row" id="btn-up-report">
+        <div class="setting-left">
+          <div class="setting-ico" id="up-ico-report" style="background:var(--warn-soft);color:var(--warn);"></div>
+          <div>
+            <div class="list-title">Report User</div>
+            <div class="list-sub">Report spam, scam, or abuse</div>
+          </div>
+        </div>
+        <span class="ico-chev" style="color:var(--text-muted);"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. NEW GROUP CREATION SCREEN -->
+  <section id="screen-new-group" class="screen no-nav">
+    <div class="card">
+      <h3 style="margin-bottom:10px;">Create New Group</h3>
+      <div class="field"><label>Group Name</label><input id="grp-name-input" maxlength="50" placeholder="e.g. Dhaka Friends" /></div>
+      <div class="field"><label>Search Members to Add</label><input id="grp-member-search" placeholder="Filter by name or @username..." /></div>
+      <div id="grp-selected-count" class="pill" style="margin-bottom:10px;">0 selected</div>
+      <div id="grp-users-pick-list" style="max-height:46vh;overflow-y:auto;"></div>
+      <button class="btn" id="btn-create-group-submit" style="margin-top:12px;">Create Group</button>
+    </div>
+  </section>
+
+  <!-- 7. GROUP INFO & GROUP ADMIN PANEL -->
+  <section id="screen-group-info" class="screen no-nav">
+    <div class="card text-center">
+      <div class="avatar avatar-lg" id="gi-avatar" style="margin:0 auto 10px;background:var(--primary);">G</div>
+      <h2 id="gi-name">Group Name</h2>
+      <div id="gi-meta" class="muted" style="margin-top:4px;">0 members</div>
+      <div id="gi-admin-edit-wrap" class="hidden" style="margin-top:14px;">
+        <div class="btn-row">
+          <input id="gi-rename-input" style="flex:1;min-width:0;" maxlength="50" placeholder="New group name" />
+          <button class="btn btn-sm" id="btn-gi-rename">Rename</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="gi-add-member-card" class="card hidden">
+      <h4 style="margin-bottom:8px;">Add Member (Group Admin)</h4>
+      <div class="field"><input id="gi-add-search" placeholder="Search user by @username or name..." /></div>
+      <div id="gi-add-results"></div>
+    </div>
+
+    <div class="section-title">Group Members</div>
+    <div id="gi-members-list"></div>
+
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn btn-danger" id="btn-gi-leave">Leave Group</button>
+    </div>
+  </section>
+
+  <!-- 8. CALL HISTORY -->
+  <section id="screen-calls" class="screen">
+    <div class="list-top" style="margin-bottom:12px;">
+      <h3 data-i18n="callHistory">Call History</h3>
+      <button class="btn btn-sm" data-nav="screen-search" id="btn-calls-new">+ New Call</button>
+    </div>
+    <div id="call-history-list"></div>
+  </section>
+
+  <!-- 9. CONTACTS / USER SEARCH -->
+  <section id="screen-search" class="screen">
+    <div class="list-item" id="btn-open-new-group" style="background:var(--primary-soft);border-color:transparent;">
+      <div class="avatar" id="ico-new-grp-av" style="background:var(--primary);width:44px;height:44px;"></div>
+      <div class="list-body">
+        <div class="list-title" style="color:var(--primary);">New Group</div>
+        <div class="list-sub">Create a group chat with admin controls</div>
+      </div>
+    </div>
+    <div class="field"><input id="user-search-input" autocapitalize="none" autocorrect="off" placeholder="Search by @username or display name..." /></div>
+    <div id="user-search-results"></div>
+  </section>
+
+  <!-- 10. NOTIFICATIONS & ANNOUNCEMENTS -->
+  <section id="screen-notifications" class="screen">
+    <div class="list-top" style="margin-bottom:10px;">
+      <h3 data-i18n="notifications">Notifications</h3>
+      <button class="btn btn-sm btn-soft" id="btn-mark-notifs-read">Mark all read</button>
+    </div>
+    <div id="notifications-list"></div>
+    <div class="section-title" data-i18n="announcements">Announcements</div>
+    <div id="home-announcements"><div class="muted">No announcements.</div></div>
+  </section>
+
+  <!-- 11. BUSINESS DIRECTORY -->
+  <section id="screen-business-dir" class="screen">
+    <div class="card" style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;">
+      <div class="list-top">
+        <div style="min-width:0;flex:1;">
+          <div style="font-weight:800;font-size:1.05rem;" data-i18n="myBusiness">My Business Hub</div>
+          <div style="font-size:0.82rem;opacity:0.9;">Manage profile, auto-replies & subscriptions</div>
+        </div>
+        <button class="btn btn-sm" style="background:#fff;color:var(--primary);flex-shrink:0;" data-nav="screen-business-dash">Open</button>
+      </div>
+    </div>
+    <div class="field"><input id="biz-search-input" placeholder="Search businesses or category..." /></div>
+    <div id="biz-dir-list"></div>
+  </section>
+
+  <!-- 12. BUSINESS PROFILE VIEW -->
+  <section id="screen-business-profile" class="screen">
+    <div id="biz-profile-content"></div>
+  </section>
+
+  <!-- 13. BUSINESS DASHBOARD -->
+  <section id="screen-business-dash" class="screen">
+    <div class="grid-2" style="margin-bottom:12px;">
+      <div class="stat-box"><div class="stat-val" id="biz-stat-customers">0</div><div class="stat-lbl">Customers</div></div>
+      <div class="stat-box"><div class="stat-val" id="biz-stat-unread">0</div><div class="stat-lbl">Unread</div></div>
+    </div>
+    <div class="card">
+      <div class="list-top" style="margin-bottom:12px;">
+        <div><strong>Active Plan:</strong> <span id="biz-current-plan" class="pill">FREE</span></div>
+        <button class="btn btn-sm" data-nav="screen-subscriptions">Upgrade Plan</button>
+      </div>
+      <form id="form-biz-profile">
+        <div class="field"><label>Business Name</label><input id="biz-name" required maxlength="60" /></div>
+        <div class="field"><label>Business Username</label><input id="biz-username" required pattern="[a-z0-9_]{3,20}" autocapitalize="none" /></div>
+        <div class="field"><label>Category</label>
+          <select id="biz-category">
+            <option>Retail & Grocery</option><option>Food & Restaurant</option>
+            <option>Fashion & Clothing</option><option>Electronics & Repair</option>
+            <option>Health & Pharmacy</option><option>Education & Services</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field"><label>Contact Info</label><input id="biz-contact" placeholder="017XXXXXXXX" /></div>
+        <div class="field"><label>Location Text</label><input id="biz-location" placeholder="Dhanmondi, Dhaka" /></div>
+        <div class="field"><label>Opening Hours</label><input id="biz-hours" placeholder="9:00 AM - 9:00 PM" /></div>
+        <div class="field"><label>Description</label><textarea id="biz-desc"></textarea></div>
+        <div class="field"><label>Welcome Auto-Message (STARTER/PRO)</label><textarea id="biz-welcome"></textarea></div>
+        <div class="field"><label>Away Auto-Message (STARTER/PRO)</label><textarea id="biz-away"></textarea></div>
+        <div class="field" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="biz-away-enabled" style="width:auto;" />
+          <label for="biz-away-enabled" style="margin:0;">Enable Away Auto-Reply</label>
+        </div>
+        <button class="btn" id="btn-biz-save" type="submit">Save Business Profile</button>
+      </form>
+    </div>
+    <div class="card">
+      <h4 style="margin-bottom:8px;">Quick Replies (STARTER/PRO)</h4>
+      <div class="field"><input id="qr-title" placeholder="Shortcut title (e.g. Price)" /></div>
+      <div class="field"><input id="qr-text" placeholder="Reply text..." /></div>
+      <button class="btn btn-sm btn-soft" id="btn-add-qr">+ Add Quick Reply</button>
+      <div id="biz-qr-list" style="margin-top:10px;"></div>
+    </div>
+  </section>
+
+  <!-- 14. SUBSCRIPTION PLANS -->
+  <section id="screen-subscriptions" class="screen">
+    <h3 style="margin-bottom:10px;" data-i18n="plans">Business Subscription Plans</h3>
+    <div class="card-soft muted" style="margin-bottom:12px;">
+      Paid plans are activated <strong>only after manual bKash verification</strong> by an administrator.
+    </div>
+    <div id="plans-container"></div>
+  </section>
+
+  <!-- 15. MANUAL bKash PAYMENT -->
+  <section id="screen-payment" class="screen">
+    <div class="card">
+      <h3 style="margin-bottom:6px;">Manual bKash Payment</h3>
+      <p class="muted" style="margin-bottom:10px;">
+        Send Money / Payment to the destination number below (subject to confirmation that the account holder is authorized to receive business payments):
+      </p>
+      <div class="card-soft text-center">
+        <div class="muted">bKash Destination Number</div>
+        <div id="pay-bkash-number" style="font-size:1.5rem;font-weight:800;color:var(--primary);letter-spacing:1px;margin:4px 0;">01999809730</div>
+        <button class="btn btn-sm btn-soft" type="button" id="btn-copy-bkash" style="margin-bottom:8px;">Copy Number</button>
+        <div>Selected Plan: <strong id="pay-plan-name">STARTER</strong> — <strong id="pay-plan-amount">299 BDT</strong></div>
+      </div>
+      <form id="form-payment">
+        <div class="field"><label>Your Sender bKash Number</label><input id="pay-sender" required pattern="01[3-9][0-9]{8}" placeholder="01XXXXXXXXX" /></div>
+        <div class="field"><label>bKash Transaction ID (TrxID)</label><input id="pay-trxid" required minlength="6" maxlength="20" placeholder="e.g. BK8X92LM10" /></div>
+        <button class="btn" id="btn-pay-submit" type="submit">Submit for Verification</button>
+      </form>
+      <p class="muted" style="margin-top:10px;font-size:0.78rem;">
+        Security Notice: Never enter your bKash PIN or OTP anywhere. Automatic verification requires an official bKash Merchant Checkout API integration.
+      </p>
+    </div>
+    <div class="section-title">My Payment Requests</div>
+    <div id="my-payments-list"></div>
+  </section>
+
+  <!-- 16. USER PROFILE -->
+  <section id="screen-profile" class="screen">
+    <div class="card text-center">
+      <div id="prof-avatar" class="avatar avatar-lg" style="margin:0 auto 10px;">U</div>
+      <h3 id="prof-name">User</h3>
+      <div id="prof-username" class="muted">@username</div>
+      <div id="prof-status" class="pill" style="margin-top:8px;">Available</div>
+    </div>
+    <div class="card">
+      <form id="form-profile">
+        <div class="field"><label data-i18n="displayName">Display Name</label><input id="edit-name" required maxlength="50" /></div>
+        <div class="field"><label>Status Message</label><input id="edit-status" maxlength="100" /></div>
+        <button class="btn" id="btn-prof-save" type="submit">Update Profile</button>
+      </form>
+    </div>
+    <div class="btn-row" style="margin-bottom:12px;">
+      <button class="btn btn-soft" style="flex:1;" data-nav="screen-subscriptions" data-i18n="plans">Plans</button>
+      <button class="btn btn-soft" style="flex:1;" data-nav="screen-settings" data-i18n="settings">Settings</button>
+    </div>
+    <button class="btn btn-danger" id="btn-logout" style="margin-bottom:10px;" data-i18n="logout">Logout</button>
+    <button class="btn btn-soft" id="btn-profile-delete-acc" style="color:var(--danger);border-color:var(--danger-soft);margin-bottom:14px;">Delete Account</button>
+    <div class="section-title">Blocked Users</div>
+    <div id="blocked-users-list"></div>
+  </section>
+
+  <!-- 17. SETTINGS SCREEN -->
+  <section id="screen-settings" class="screen">
+    <div class="settings-group">
+      <div class="setting-row" data-nav="screen-profile">
+        <div class="setting-left">
+          <div class="avatar" id="set-prof-avatar" style="width:46px;height:46px;background:var(--primary);">U</div>
+          <div>
+            <div class="list-title" id="set-prof-name">User</div>
+            <div class="list-sub" id="set-prof-sub">Tap to edit profile & blocked users</div>
+          </div>
+        </div>
+        <span class="ico-chev" style="color:var(--text-muted);"></span>
+      </div>
+    </div>
+
+    <div class="section-title">Preferences & Chat</div>
+    <div class="settings-group">
+      <div class="setting-row" id="row-toggle-theme">
+        <div class="setting-left">
+          <div class="setting-ico" id="set-ico-theme"></div>
+          <div><div class="list-title">Dark Mode</div><div class="list-sub" id="set-theme-label">Light Mode</div></div>
+        </div>
+        <button type="button" class="switch" id="sw-theme" aria-label="Dark Mode"></button>
+      </div>
+      <div class="setting-row" id="row-toggle-lang">
+        <div class="setting-left">
+          <div class="setting-ico" id="set-ico-lang"></div>
+          <div><div class="list-title">Language / ভাষা</div><div class="list-sub" id="set-lang-label">English</div></div>
+        </div>
+        <button type="button" class="switch" id="sw-lang" aria-label="Bengali Language"></button>
+      </div>
+      <div class="setting-row" id="row-toggle-sound">
+        <div class="setting-left">
+          <div class="setting-ico" id="set-ico-sound"></div>
+          <div><div class="list-title">Message Alert Sound</div><div class="list-sub">Play chime on incoming alerts</div></div>
+        </div>
+        <button type="button" class="switch on" id="sw-sound" aria-label="Alert Sound"></button>
+      </div>
+      <div class="setting-row" id="row-cycle-fontsize">
+        <div class="setting-left">
+          <div class="setting-ico" id="set-ico-font"></div>
+          <div><div class="list-title">Chat Text Size</div><div class="list-sub" id="set-font-label">Medium</div></div>
+        </div>
+        <span class="pill" id="btn-font-pill">Change</span>
+      </div>
+    </div>
+
+    <div class="section-title">Account & Notifications</div>
+    <div class="settings-group">
+      <div class="setting-row" id="btn-settings-push">
+        <div class="setting-left">
+          <div class="setting-ico" id="set-ico-push"></div>
+          <div><div class="list-title">Push Notifications & FCM</div><div class="list-sub" id="set-push-status">Checking...</div></div>
+        </div>
+        <span class="pill">Sync</span>
+      </div>
+      <div class="setting-row" id="btn-settings-reset">
+        <div class="setting-left">
+          <div class="setting-ico" id="set-ico-lock"></div>
+          <div><div class="list-title">Reset Password</div><div class="list-sub">Send reset link to your email</div></div>
+        </div>
+        <span class="ico-chev" style="color:var(--text-muted);"></span>
+      </div>
+      <div class="setting-row" id="btn-clear-cache">
+        <div class="setting-left">
+          <div class="setting-ico" id="set-ico-trash"></div>
+          <div><div class="list-title">Clear Local Preferences</div><div class="list-sub">Reset local theme & payment cache</div></div>
+        </div>
+        <span class="ico-chev" style="color:var(--text-muted);"></span>
+      </div>
+      <div class="setting-row" id="btn-settings-delete-acc">
+        <div class="setting-left">
+          <div class="setting-ico" id="set-ico-del-acc" style="background:var(--danger-soft);color:var(--danger);"></div>
+          <div><div class="list-title" style="color:var(--danger);">Delete Account</div><div class="list-sub">Permanently delete your account</div></div>
+        </div>
+        <span class="ico-chev" style="color:var(--danger);"></span>
+      </div>
+    </div>
+
+    <div class="card-soft muted" style="font-size:0.8rem;line-height:1.45;">
+      <strong>Privacy & Encryption:</strong> Messages and calls use TLS / DTLS-SRTP encryption in transit. Server-stored chat history supports search and notifications and does not use custom E2EE.
+    </div>
+  </section>
+
+  <!-- BOTTOM NAVIGATION -->
+  <nav id="bottom-nav" class="bottom-nav hidden">
+    <button class="nav-item active" data-nav="screen-home">
+      <span class="nav-pill" id="nav-ico-chats"></span>
+      <span data-i18n="chats">Chats</span>
+      <span class="badge hidden" id="nav-unread-badge">0</span>
+    </button>
+    <button class="nav-item" data-nav="screen-calls">
+      <span class="nav-pill" id="nav-ico-calls"></span>
+      <span data-i18n="calls">Calls</span>
+    </button>
+    <button class="nav-item" data-nav="screen-business-dir">
+      <span class="nav-pill" id="nav-ico-biz"></span>
+      <span data-i18n="business">Business</span>
+    </button>
+    <button class="nav-item" data-nav="screen-notifications">
+      <span class="nav-pill" id="nav-ico-alerts"></span>
+      <span data-i18n="alerts">Alerts</span>
+    </button>
+    <button class="nav-item" data-nav="screen-profile">
+      <span class="nav-pill" id="nav-ico-profile"></span>
+      <span data-i18n="profile">Profile</span>
+    </button>
+  </nav>
+
+  <!-- INCOMING CALL OVERLAY -->
+  <div id="overlay-incoming" class="overlay hidden">
+    <div class="text-center" style="margin-top:30px;">
+      <div class="pill" id="inc-call-type" style="background:rgba(255,255,255,0.16);color:#fff;">AUDIO CALL</div>
+      <div class="avatar avatar-lg" id="inc-call-avatar" style="margin:24px auto 14px;background:var(--primary);">?</div>
+      <h2 id="inc-call-name">Caller</h2>
+      <p style="opacity:0.8;margin-top:6px;">Incoming call on Ek Kotha...</p>
+    </div>
+    <div class="call-controls" style="margin-bottom:30px;">
+      <button class="call-btn hangup" id="btn-reject-call" aria-label="Reject"></button>
+      <button class="call-btn accept" id="btn-accept-call" aria-label="Accept"></button>
+    </div>
+  </div>
+
+  <!-- ACTIVE AUDIO / VIDEO CALL OVERLAY -->
+  <div id="overlay-active-call" class="overlay hidden">
+    <div class="text-center">
+      <div id="act-call-name" style="font-size:1.25rem;font-weight:700;">Peer</div>
+      <div id="act-call-status" style="font-size:0.9rem;opacity:0.8;margin-top:3px;">Calling...</div>
+    </div>
+    <div id="audio-stage" class="text-center" style="margin:auto 0;">
+      <div class="avatar avatar-lg" id="act-call-avatar" style="width:96px;height:96px;font-size:2rem;margin:0 auto;background:var(--primary);">P</div>
+    </div>
+    <div id="video-stage" class="video-stage hidden">
+      <video id="remote-video" autoplay playsinline></video>
+      <video id="local-video" autoplay playsinline muted></video>
+    </div>
+    <audio id="remote-audio" autoplay></audio>
+    <div class="call-controls">
+      <button class="call-btn" id="btn-toggle-mic" aria-label="Mute"></button>
+      <button class="call-btn hidden" id="btn-toggle-cam" aria-label="Camera"></button>
+      <button class="call-btn hangup" id="btn-end-call" aria-label="End Call"></button>
+    </div>
+  </div>
+
+  <!-- BOTTOM ACTION SHEET -->
+  <div id="action-sheet-backdrop" class="modal-backdrop hidden">
+    <div class="sheet" id="action-sheet">
+      <div class="sheet-handle"></div>
+      <div id="action-sheet-title" class="sheet-title hidden"></div>
+      <div id="action-sheet-body"></div>
+    </div>
+  </div>
+
+  <!-- ONE-TIME MESSAGE VIEWER MODAL -->
+  <div id="onetime-modal" class="modal-backdrop modal-center hidden">
+    <div class="auth-card" style="max-width:400px;">
+      <div class="list-top" style="margin-bottom:10px;">
+        <span class="pill">One-Time Message</span>
+        <button class="icon-btn" id="btn-close-onetime"></button>
+      </div>
+      <div id="onetime-modal-text" style="font-size:1.05rem;line-height:1.5;padding:12px;background:var(--surface-2);border-radius:12px;word-break:break-word;"></div>
+      <p class="muted" style="margin-top:10px;font-size:0.78rem;">This message disappears permanently once closed.</p>
+    </div>
+  </div>
+
+  <!-- DELETE ACCOUNT CONFIRMATION MODAL -->
+  <div id="delete-account-modal" class="modal-backdrop modal-center hidden">
+    <div class="auth-card" style="max-width:400px;">
+      <h3 style="color:var(--danger);margin-bottom:8px;">Delete Account?</h3>
+      <p class="muted" style="line-height:1.45;margin-bottom:14px;">
+        This will permanently delete your Ek Kotha profile, username, notifications, and access. This action cannot be undone.
+      </p>
+      <div id="del-acc-pass-wrap" class="field hidden">
+        <label>Confirm Password to Continue</label>
+        <input id="del-acc-pass" type="password" placeholder="Enter your password" />
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-soft" style="flex:1;" id="btn-cancel-del-acc" type="button">Cancel</button>
+        <button class="btn btn-danger" style="flex:1;" id="btn-confirm-del-acc" type="button">Delete Forever</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, sendPasswordResetEmail,
+  setPersistence, browserLocalPersistence,
+  EmailAuthProvider, reauthenticateWithCredential
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getDatabase, ref, set, get, push, update, remove, onValue,
+  query, orderByChild, equalTo, limitToLast, onDisconnect, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+/* ================= FIREBASE CONFIG (Project: my-to-up) ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyAchpbEfFNjdFXjxTi6FGsthmaWullsaiM",
+  authDomain: "my-to-up.firebaseapp.com",
+  databaseURL: "https://my-to-up-default-rtdb.firebaseio.com",
+  projectId: "my-to-up",
+  storageBucket: "my-to-up.firebasestorage.app",
+  messagingSenderId: "405413447269",
+  appId: "1:405413447269:web:bc2a0888f6cf097484a88c"
+};
+const VAPID_PUBLIC_KEY = "BH6xJhIr-UFdzSz_Qz1C_NvufVevHPIO2No5Dsd5UgCnBfsIgXLpiue7v6wvMoM7XjYSfHKuivc_RoBiXgcryFM";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence).catch(() => {});
+const db = getDatabase(app);
+
+/* ================= VECTOR SVG ICONS ================= */
+const EK_FALLBACK_SVG = `<svg viewBox="0 0 120 120" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+  <path d="M60 10C31.2 10 8 31.8 8 59c0 11.4 4.1 21.9 11 30.2L12 108l20.8-6.4c8.1 3.7 17.4 5.4 27.2 5.4 28.8 0 52-21.8 52-48S88.8 10 60 10z" fill="#0038D8"/>
+  <path d="M30 82c18-1 33-8 42-22 4-6 7-11 12-12 4-1 7 2 8 5l5 2-4 3c-2 8-8 16-18 22-14 8-30 9-45 2z" fill="#ffffff"/>
+  <rect x="76" y="58" width="22" height="15" rx="3" fill="#ffffff"/>
+  <text x="87" y="69" text-anchor="middle" font-size="8" font-weight="800" fill="#0038D8" font-family="sans-serif">EK</text>
+</svg>`;
+
+const SVG_PATHS = {
+  back: `<polyline points="15 18 9 12 15 6"/>`,
+  search: `<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>`,
+  bell: `<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>`,
+  settings: `<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>`,
+  phone: `<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>`,
+  video: `<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>`,
+  more: `<circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>`,
+  chat: `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,
+  biz: `<path d="M3 9l1-5h16l1 5"/><path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 21V13h6v8"/>`,
+  users: `<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
+  user: `<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>`,
+  send: `<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>`,
+  plus: `<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>`,
+  x: `<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>`,
+  check: `<polyline points="20 6 9 17 4 12"/>`,
+  checkDouble: `<polyline points="18 6 7 17 2 12"/><polyline points="22 10 13 19 11 17"/>`,
+  chevron: `<polyline points="9 18 15 12 9 6"/>`,
+  chevronDown: `<polyline points="6 9 12 15 18 9"/>`,
+  megaphone: `<path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>`,
+  mic: `<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>`,
+  hangup: `<path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.11 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/>`,
+  block: `<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>`,
+  flag: `<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>`,
+  trash: `<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>`,
+  reply: `<polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>`,
+  share: `<polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/>`,
+  copy: `<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>`,
+  verified: `<path d="M12 2l2.4 2.4h3.4v3.4L20.2 10l-2.4 2.4v3.4h-3.4L12 18.2l-2.4-2.4H6.2v-3.4L3.8 10l2.4-2.4V4.4h3.4z"/><polyline points="9 10.5 11 12.5 15 8.5"/>`,
+  globe: `<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>`,
+  moon: `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`,
+  shield: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>`,
+  lock: `<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`,
+  volume: `<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>`,
+  type: `<polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>`,
+  clock: `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`,
+  userX: `<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/>`
+};
+
+const iconSvg = (name, size = 20, color = "currentColor") =>
+  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${SVG_PATHS[name] || ""}</svg>`;
+
+function mountStaticIcons() {
+  const applyImgFallback = (imgId, wrapId, sizePx) => {
+    const img = document.getElementById(imgId);
+    if (!img) return;
+    img.onerror = () => {
+      if (wrapId) document.getElementById(wrapId).innerHTML = EK_FALLBACK_SVG;
+      else { const d = document.createElement("div"); d.style.width = sizePx; d.style.height = sizePx; d.innerHTML = EK_FALLBACK_SVG; img.replaceWith(d); }
+    };
+  };
+  applyImgFallback("splash-logo-img", "splash-logo-wrap");
+  applyImgFallback("welcome-logo-img", "welcome-logo");
+  applyImgFallback("topbar-logo-img", null, "32px");
+
+  document.getElementById("btn-back").innerHTML = iconSvg("back");
+  document.getElementById("reg-back-ico").innerHTML = iconSvg("back");
+  document.getElementById("login-back-ico").innerHTML = iconSvg("back");
+  document.getElementById("btn-chat-audio").innerHTML = iconSvg("phone");
+  document.getElementById("btn-chat-video").innerHTML = iconSvg("video");
+  document.getElementById("btn-chat-more").innerHTML = iconSvg("more");
+  document.getElementById("btn-top-search").innerHTML = iconSvg("search");
+  document.getElementById("ico-top-bell").innerHTML = iconSvg("bell");
+  document.getElementById("btn-top-settings").innerHTML = iconSvg("settings");
+  document.getElementById("ico-home-search").innerHTML = iconSvg("search", 18);
+  document.getElementById("ico-banner-bell").innerHTML = iconSvg("bell", 18);
+  document.getElementById("ico-banner-announce").innerHTML = iconSvg("megaphone", 18);
+  document.getElementById("ico-banner-chev").innerHTML = iconSvg("chevron", 18);
+  document.getElementById("fab-new-chat").innerHTML = iconSvg("plus", 26);
+  document.getElementById("btn-scroll-bottom").innerHTML = iconSvg("chevronDown", 20);
+  document.getElementById("btn-cancel-reply").innerHTML = iconSvg("x", 16);
+  document.getElementById("btn-send-msg").innerHTML = iconSvg("send", 19);
+  document.getElementById("ico-new-grp-av").innerHTML = iconSvg("users", 20, "#ffffff");
+  document.getElementById("nav-ico-chats").innerHTML = iconSvg("chat");
+  document.getElementById("nav-ico-calls").innerHTML = iconSvg("phone");
+  document.getElementById("nav-ico-biz").innerHTML = iconSvg("biz");
+  document.getElementById("nav-ico-alerts").innerHTML = iconSvg("bell");
+  document.getElementById("nav-ico-profile").innerHTML = iconSvg("user");
+  document.getElementById("btn-reject-call").innerHTML = iconSvg("x", 24);
+  document.getElementById("btn-accept-call").innerHTML = iconSvg("phone", 24);
+  document.getElementById("btn-toggle-mic").innerHTML = iconSvg("mic", 22);
+  document.getElementById("btn-toggle-cam").innerHTML = iconSvg("video", 22);
+  document.getElementById("btn-end-call").innerHTML = iconSvg("hangup", 22);
+  document.getElementById("btn-close-onetime").innerHTML = iconSvg("x", 18);
+  document.getElementById("welcome-lang-btn").innerHTML = `${iconSvg("globe", 16)} বাংলা / EN`;
+  document.getElementById("welcome-theme-btn").innerHTML = `${iconSvg("moon", 16)} Theme`;
+  document.getElementById("set-ico-theme").innerHTML = iconSvg("moon");
+  document.getElementById("set-ico-lang").innerHTML = iconSvg("globe");
+  document.getElementById("set-ico-sound").innerHTML = iconSvg("volume");
+  document.getElementById("set-ico-font").innerHTML = iconSvg("type");
+  document.getElementById("set-ico-push").innerHTML = iconSvg("bell");
+  document.getElementById("set-ico-lock").innerHTML = iconSvg("lock");
+  document.getElementById("set-ico-trash").innerHTML = iconSvg("trash");
+  document.getElementById("set-ico-del-acc").innerHTML = iconSvg("userX");
+  document.getElementById("btn-up-chat").innerHTML = `${iconSvg("chat", 17)} <span>Message</span>`;
+  document.getElementById("btn-up-audio").innerHTML = `${iconSvg("phone", 17)} <span>Call</span>`;
+  document.getElementById("btn-up-video").innerHTML = `${iconSvg("video", 17)} <span>Video</span>`;
+  document.getElementById("up-ico-block").innerHTML = iconSvg("block");
+  document.getElementById("up-ico-report").innerHTML = iconSvg("flag");
+  document.querySelectorAll(".ico-chev").forEach((c) => c.innerHTML = iconSvg("chevron", 18));
+}
+
+/* ================= I18N ================= */
+const I18N = {
+  en: {
+    appName: "Ek Kotha",
+    welcomeTag: "Fast, lightweight text messaging, video links, crystal-clear calls, and group tools built for Bangladesh.",
+    textOnlyBadge: "Text, Video Links, Groups & Live Calls",
+    textOnlyDesc: "Zero photo or file uploads. Safe and fast on mobile data.",
+    createAccount: "Create Account", login: "Login", displayName: "Display Name",
+    username: "Username (lowercase, no spaces)", email: "Email", password: "Password (min 6 chars)",
+    registerBtn: "Register", forgotPass: "Forgot Password?", filterAll: "All",
+    enablePushTitle: "Enable Notifications", enablePushDesc: "Get alerts for new messages and calls",
+    enableBtn: "Enable", announcements: "Announcements & Updates", loadOlder: "Load older messages",
+    callHistory: "Call History", notifications: "Notifications", myBusiness: "My Business Hub",
+    plans: "Subscription Plans", settings: "Settings", logout: "Logout",
+    chats: "Chats", calls: "Calls", business: "Business", alerts: "Alerts", profile: "Profile"
+  },
+  bn: {
+    appName: "এক কথা",
+    welcomeTag: "বাংলাদেশের জন্য দ্রুত টেক্সট মেসেজিং, ভিডিও লিংক শেয়ার, গ্রুপ ও ক্লিয়ার কলিং প্ল্যাটফর্ম।",
+    textOnlyBadge: "টেক্সট, ভিডিও লিংক, গ্রুপ চ্যাট ও লাইভ কল",
+    textOnlyDesc: "ছবি বা ফাইল আপলোড নেই। নিরাপদ ও মোবাইল ডেটা সাশ্রয়ী।",
+    createAccount: "নতুন অ্যাকাউন্ট", login: "লগইন", displayName: "আপনার নাম",
+    username: "ইউজারনেম (ইংরেজি ছোট হাতের)", email: "ইমেইল", password: "পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)",
+    registerBtn: "নিবন্ধন করুন", forgotPass: "পাসওয়ার্ড ভুলে গেছেন?", filterAll: "সবগুলো",
+    enablePushTitle: "নোটিফিকেশন চালু করুন", enablePushDesc: "নতুন মেসেজ বা কল এলে তাৎক্ষণিক অ্যালার্ট পান",
+    enableBtn: "চালু করুন", announcements: "ঘোষণা ও আপডেট", loadOlder: "পুরনো মেসেজ দেখুন",
+    callHistory: "কল হিস্ট্রি", notifications: "নোটিফিকেশন", myBusiness: "আমার বিজনেস হাব",
+    plans: "সাবস্ক্রিপশন প্ল্যান", settings: "সেটিংস", logout: "লগআউট",
+    chats: "চ্যাট", calls: "কল", business: "বিজনেস", alerts: "অ্যালার্ট", profile: "প্রোফাইল"
+  }
+};
+
+/* ================= APP STATE ================= */
+const state = {
+  user: null, profile: null, isRegistering: false, sessionStartTs: Date.now(),
+  seenNotifIds: new Set(), screen: "screen-splash", history: [], navDepth: 0,
+  chatFilter: "all", lang: localStorage.getItem("ek_lang") || "en",
+  theme: localStorage.getItem("ek_theme") || "light",
+  soundEnabled: localStorage.getItem("ek_sound") !== "false",
+  fontSize: localStorage.getItem("ek_font") || "medium",
+  oneTimeComposer: false, messaging: null, usersCache: {}, conversations: {}, blocks: {},
+  adminSettings: { bkashNumber: "01999809730", plans: { FREE: 0, STARTER: 299, PRO: 799 } },
+  activeConvId: null, activePeerId: null, viewingProfileUid: null, replyTo: null, msgLimit: 30,
+  triedReadIds: new Set(), unsubs: [], chatUnsub: null, convUnsub: null,
+  pc: null, localStream: null, activeCallId: null, callTimerInt: null, callSeconds: 0,
+  callUnsubs: [], incomingCallData: null, selectedPlanForPay: "STARTER", groupPickSelected: new Set()
+};
+const convDetailUnsubs = {};
+
+/* ================= HELPERS & PREFERENCES ================= */
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+};
+const toast = (msg, onClick) => {
+  const t = $("toast");
+  t.textContent = msg; t.classList.remove("hidden");
+  t.onclick = () => { t.classList.add("hidden"); if (onClick) onClick(); };
+  clearTimeout(toast._tm);
+  toast._tm = setTimeout(() => t.classList.add("hidden"), 3500);
+};
+const initials = (name) => (name || "?").trim().slice(0, 2).toUpperCase();
+const pickColor = (str) => {
+  const cols = ["#0038d8", "#1d4ed8", "#0284c7", "#4f46e5", "#0d9488", "#0f766e"];
+  let h = 0; for (let i = 0; i < (str || "").length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  return cols[Math.abs(h) % cols.length];
+};
+const fmtTime = (ts) => ts ? new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+const fmtDate = (ts) => {
+  if (!ts) return "";
+  const d = new Date(ts), today = new Date();
+  if (d.toDateString() === today.toDateString()) return "Today";
+  const yest = new Date(Date.now() - 86400000);
+  if (d.toDateString() === yest.toDateString()) return "Yesterday";
+  return d.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
+};
+const personalConvId = (u1, u2) => (u1 < u2 ? `${u1}_${u2}` : `${u2}_${u1}`);
+const bizConvId = (bizId, custId) => `biz_${bizId}_${custId}`;
+
+function playChime() {
+  if (!state.soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.type = "sine"; osc.frequency.setValueAtTime(660, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.11);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime + 0.23);
+  } catch (_) {}
+}
+
+function isVideoUrl(url) {
+  return /(youtube\.com|youtu\.be|vimeo\.com|fb\.watch|facebook\.com\/.*\/videos|tiktok\.com|dailymotion\.com|\.mp4(\?|$))/i.test(url);
+}
+
+function renderMessageTextWithLinks(container, text) {
+  const regex = /(https?:\/\/[^\s<>"']+)/gi;
+  let lastIdx = 0, hasVideoLink = false, match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIdx) container.appendChild(document.createTextNode(text.slice(lastIdx, match.index)));
+    const rawUrl = match[0];
+    const a = document.createElement("a");
+    a.className = "msg-link"; a.href = rawUrl; a.target = "_blank"; a.rel = "noopener noreferrer";
+    a.textContent = rawUrl;
+    a.onclick = (ev) => ev.stopPropagation();
+    container.appendChild(a);
+    if (isVideoUrl(rawUrl)) hasVideoLink = true;
+    lastIdx = regex.lastIndex;
+  }
+  if (lastIdx < text.length) container.appendChild(document.createTextNode(text.slice(lastIdx)));
+  if (hasVideoLink) {
+    const tag = el("div", "video-link-tag");
+    tag.innerHTML = `${iconSvg("video", 12)} <span>Video Link</span>`;
+    container.appendChild(tag);
+  }
+}
+
+function applyTheme(t) {
+  state.theme = t; localStorage.setItem("ek_theme", t);
+  document.documentElement.setAttribute("data-theme", t);
+  $("set-theme-label").textContent = t === "dark" ? "Dark Mode" : "Light Mode";
+  $("sw-theme").classList.toggle("on", t === "dark");
+}
+function applyLang(l) {
+  state.lang = l; localStorage.setItem("ek_lang", l);
+  const dict = I18N[l] || I18N.en;
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    const k = node.getAttribute("data-i18n");
+    if (dict[k]) node.textContent = dict[k];
+  });
+  $("set-lang-label").textContent = l === "bn" ? "বাংলা" : "English";
+  $("sw-lang").classList.toggle("on", l === "bn");
+}
+function applyFontSize(sz) {
+  state.fontSize = sz; localStorage.setItem("ek_font", sz);
+  const map = { small: "0.84rem", medium: "0.94rem", large: "1.08rem" };
+  document.documentElement.style.setProperty("--msg-font", map[sz] || "0.94rem");
+  $("set-font-label").textContent = sz.charAt(0).toUpperCase() + sz.slice(1);
+}
+function applySound(on) {
+  state.soundEnabled = on; localStorage.setItem("ek_sound", String(on));
+  $("sw-sound").classList.toggle("on", on);
+}
+
+mountStaticIcons();
+applyTheme(state.theme);
+applyLang(state.lang);
+applyFontSize(state.fontSize);
+applySound(state.soundEnabled);
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./firebase-messaging-sw.js").catch(() => {});
+}
+
+/* ================= NAVIGATION & MOBILE BACK BUTTON ================= */
+const SCREEN_TITLES = {
+  "screen-home": "Ek Kotha", "screen-calls": "Calls", "screen-search": "Find People",
+  "screen-new-group": "New Group", "screen-group-info": "Group Info", "screen-user-profile": "Profile",
+  "screen-notifications": "Alerts & Updates", "screen-business-dir": "Business",
+  "screen-business-profile": "Business Profile", "screen-business-dash": "Business Hub",
+  "screen-subscriptions": "Plans", "screen-payment": "bKash Payment",
+  "screen-profile": "Profile", "screen-settings": "Settings"
+};
+const ROOT_TABS = new Set(["screen-home", "screen-calls", "screen-business-dir", "screen-notifications", "screen-profile"]);
+const NO_NAV_SCREENS = new Set(["screen-splash", "screen-welcome", "screen-register", "screen-login", "screen-chat-room", "screen-new-group", "screen-group-info", "screen-user-profile"]);
+
+function refreshChatRoomTopbar() {
+  const cid = state.activeConvId;
+  if (!cid) return;
+  const conv = state.conversations[cid];
+  if (conv?.type === "group") {
+    const mCount = Object.keys(conv.participants || {}).length;
+    $("topbar-title").textContent = conv.groupName || "Group";
+    $("topbar-sub").textContent = `Tap for group info • ${mCount} members`;
+    $("topbar-avatar").textContent = initials(conv.groupName);
+    $("topbar-avatar").style.background = pickColor(conv.groupName);
+  } else if (state.activePeerId) {
+    const u = state.usersCache[state.activePeerId] || conv?.participantMeta?.[state.activePeerId] || { displayName: "User", name: "User" };
+    const name = u.displayName || u.name || "User";
+    $("topbar-title").textContent = name;
+    $("topbar-avatar").textContent = initials(name);
+    $("topbar-avatar").style.background = u.avatarColor || u.color || "#0038d8";
+    const isTyping = conv?.typing?.[state.activePeerId];
+    $("topbar-sub").textContent = isTyping ? "typing..." : (u.online ? "Online" : (u.lastSeen ? `Last seen ${fmtTime(u.lastSeen)}` : "Tap to view profile"));
+  }
+}
+
+try { history.replaceState({ ekScreen: "screen-splash", ekIdx: 0 }, ""); } catch (_) {}
+
+function navigate(screenId, pushHist = true) {
+  const prevScreen = state.screen;
+  const keepChatAlive = screenId === "screen-chat-room" || screenId === "screen-group-info" || screenId === "screen-user-profile";
+  if (prevScreen === "screen-chat-room" && !keepChatAlive) leaveChatRoom();
+
+  if (pushHist) {
+    if (screenId === "screen-home") {
+      state.history = []; state.navDepth = 0;
+      try { history.replaceState({ ekScreen: "screen-home", ekIdx: 0 }, ""); } catch (_) {}
+    } else if (ROOT_TABS.has(screenId)) {
+      state.history = ["screen-home"];
+      if (state.navDepth === 0) {
+        state.navDepth = 1;
+        try { history.pushState({ ekScreen: screenId, ekIdx: 1 }, ""); } catch (_) {}
+      } else {
+        try { history.replaceState({ ekScreen: screenId, ekIdx: state.navDepth }, ""); } catch (_) {}
+      }
+    } else if (prevScreen && prevScreen !== screenId && prevScreen !== "screen-splash") {
+      state.history.push(prevScreen);
+      state.navDepth++;
+      try { history.pushState({ ekScreen: screenId, ekIdx: state.navDepth }, ""); } catch (_) {}
+    }
+  } else if (screenId === "screen-home") {
+    state.history = []; state.navDepth = 0;
+  }
+
+  state.screen = screenId;
+  document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+  $(screenId).classList.add("active");
+
+  const hideBars = ["screen-splash", "screen-welcome", "screen-register", "screen-login"].includes(screenId);
+  const authed = !!state.user && !hideBars;
+  $("topbar").classList.toggle("hidden", !authed);
+  $("bottom-nav").classList.toggle("hidden", !authed || NO_NAV_SCREENS.has(screenId));
+
+  if (authed) {
+    const isChat = screenId === "screen-chat-room";
+    const isGroupChat = isChat && state.conversations[state.activeConvId]?.type === "group";
+    $("btn-back").classList.toggle("hidden", ROOT_TABS.has(screenId));
+    $("topbar-logo-img")?.classList.toggle("hidden", isChat || screenId !== "screen-home");
+    $("topbar-avatar").classList.toggle("hidden", !isChat);
+    $("topbar-sub").classList.toggle("hidden", !isChat);
+    $("topbar-title").classList.toggle("chat-mode", isChat);
+
+    $("btn-chat-audio").classList.toggle("hidden", !isChat || isGroupChat);
+    $("btn-chat-video").classList.toggle("hidden", !isChat || isGroupChat);
+    $("btn-chat-more").classList.toggle("hidden", !isChat);
+    $("btn-top-search").classList.toggle("hidden", isChat);
+    $("btn-top-notif").classList.toggle("hidden", isChat);
+    $("btn-top-settings").classList.toggle("hidden", isChat);
+
+    if (isChat) refreshChatRoomTopbar();
+    else { $("topbar-title").textContent = SCREEN_TITLES[screenId] || "Ek Kotha"; $("topbar-sub").textContent = ""; }
+    document.querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.nav === screenId));
+  }
+
+  if (screenId === "screen-search") loadAndRenderUserSearch();
+  if (screenId === "screen-new-group") loadNewGroupScreen();
+  if (screenId === "screen-group-info") renderGroupInfo();
+  if (screenId === "screen-business-dir") loadBusinessDirectory();
+  if (screenId === "screen-business-dash") loadBusinessDashboard();
+  if (screenId === "screen-subscriptions") renderPlans();
+  if (screenId === "screen-payment") loadPaymentScreen();
+  if (screenId === "screen-profile") renderProfileScreen();
+  if (screenId === "screen-settings") renderSettingsScreen();
+}
+
+function closeAllModals() {
+  let closed = false;
+  ["action-sheet-backdrop", "onetime-modal", "delete-account-modal"].forEach((id) => {
+    const m = $(id);
+    if (m && !m.classList.contains("hidden")) { m.classList.add("hidden"); closed = true; }
+  });
+  return closed;
+}
+
+function goBackInApp() {
+  if (closeAllModals()) return;
+  if (state.navDepth > 0) history.back();
+  else if (state.history.length > 0) navigate(state.history.pop(), false);
+  else if (state.user && state.screen !== "screen-home") navigate("screen-home", false);
+  else if (!state.user && (state.screen === "screen-register" || state.screen === "screen-login")) navigate("screen-welcome", false);
+}
+
+window.addEventListener("popstate", () => {
+  if (closeAllModals()) {
+    try { history.pushState({ ekScreen: state.screen, ekIdx: state.navDepth }, ""); } catch (_) {}
+    return;
+  }
+  state.navDepth = Math.max(0, state.navDepth - 1);
+  const prev = state.history.pop();
+  if (prev) navigate(prev, false);
+  else if (state.user && state.screen !== "screen-home") navigate("screen-home", false);
+  else if (!state.user && (state.screen === "screen-register" || state.screen === "screen-login")) navigate("screen-welcome", false);
+});
+
+window.addEventListener("resize", () => {
+  if (state.screen === "screen-chat-room") {
+    const b = $("chat-messages-box");
+    if (b) b.scrollTop = b.scrollHeight;
+  }
+});
+
+document.addEventListener("click", (e) => {
+  const navBtn = e.target.closest("[data-nav]");
+  if (navBtn) navigate(navBtn.dataset.nav);
+});
+$("btn-back").onclick = goBackInApp;
+$("reg-back-ico").onclick = goBackInApp;
+$("login-back-ico").onclick = goBackInApp;
+$("btn-top-search").onclick = () => navigate("screen-search");
+$("btn-top-notif").onclick = () => navigate("screen-notifications");
+$("btn-top-settings").onclick = () => navigate("screen-settings");
+$("go-register").onclick = () => navigate("screen-register", true);
+$("go-login").onclick = () => navigate("screen-login", true);
+$("welcome-lang-btn").onclick = () => applyLang(state.lang === "en" ? "bn" : "en");
+$("welcome-theme-btn").onclick = () => applyTheme(state.theme === "light" ? "dark" : "light");
+$("row-toggle-theme").onclick = () => applyTheme(state.theme === "light" ? "dark" : "light");
+$("row-toggle-lang").onclick = () => applyLang(state.lang === "en" ? "bn" : "en");
+$("row-toggle-sound").onclick = () => { applySound(!state.soundEnabled); if (state.soundEnabled) playChime(); };
+$("row-cycle-fontsize").onclick = () => {
+  const next = state.fontSize === "small" ? "medium" : (state.fontSize === "medium" ? "large" : "small");
+  applyFontSize(next);
+  toast(`Chat text size: ${next}`);
+};
+$("btn-clear-cache").onclick = () => {
+  localStorage.removeItem("ek_theme"); localStorage.removeItem("ek_lang"); localStorage.removeItem("ek_font");
+  applyTheme("light"); applyLang("en"); applyFontSize("medium");
+  toast("Local preferences reset.");
+};
+$("btn-open-new-group").onclick = () => navigate("screen-new-group");
+$("topbar-logo-wrap").onclick = () => {
+  if (state.screen !== "screen-chat-room") return;
+  const conv = state.conversations[state.activeConvId];
+  if (conv?.type === "group") navigate("screen-group-info");
+  else if (state.activePeerId) openUserProfile(state.activePeerId);
+};
+$("reg-username").oninput = (e) => { e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""); };
+
+/* ================= AUTHENTICATION ================= */
+$("form-register").onsubmit = async (e) => {
+  e.preventDefault();
+  const displayName = $("reg-name").value.trim();
+  const username = $("reg-username").value.trim().toLowerCase();
+  const email = $("reg-email").value.trim();
+  const pass = $("reg-pass").value;
+  if (!displayName) return toast("Enter your display name.");
+  if (!/^[a-z0-9_]{3,20}$/.test(username)) return toast("Username must be 3-20 lowercase letters, numbers, or _.");
+
+  const btn = $("btn-register-submit"); btn.disabled = true; state.isRegistering = true;
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    const uid = cred.user.uid;
+    try {
+      const unameSnap = await get(ref(db, `usernames/${username}`));
+      if (unameSnap.exists()) {
+        await cred.user.delete().catch(() => {});
+        state.isRegistering = false; btn.disabled = false;
+        return toast("Username already taken. Choose another.");
+      }
+    } catch (_) {}
+
+    const profile = {
+      uid, username, displayName, email,
+      status: "Available on Ek Kotha", avatarColor: pickColor(username),
+      role: "user", online: true, lastSeen: Date.now(), blocked: false, createdAt: Date.now()
+    };
+    await set(ref(db, `usernames/${username}`), { uid }).catch(() => {});
+    await set(ref(db, `users/${uid}`), profile);
+
+    state.isRegistering = false; btn.disabled = false;
+    $("form-register").reset();
+    toast("Welcome to Ek Kotha!");
+    await bootSignedInUser(cred.user);
+  } catch (err) {
+    state.isRegistering = false; btn.disabled = false;
+    toast(err.message);
+  }
+};
+
+$("form-login").onsubmit = async (e) => {
+  e.preventDefault();
+  const btn = $("btn-login-submit"); btn.disabled = true;
+  try {
+    await signInWithEmailAndPassword(auth, $("login-email").value.trim(), $("login-pass").value);
+    $("form-login").reset();
+  } catch (err) { toast("Login failed: " + err.message); }
+  finally { btn.disabled = false; }
+};
+
+async function triggerPasswordReset(emailInput) {
+  const email = (emailInput || "").trim();
+  if (!email) return toast("Enter your email in the box first, then tap Forgot Password.");
+  try { await sendPasswordResetEmail(auth, email); toast("Password reset email sent to " + email); }
+  catch (err) { toast(err.message); }
+}
+$("btn-forgot-pass").onclick = () => triggerPasswordReset($("login-email").value);
+$("btn-settings-reset").onclick = () => triggerPasswordReset(state.user?.email);
+$("btn-logout").onclick = async () => {
+  if (state.user) await update(ref(db, `users/${state.user.uid}`), { online: false, lastSeen: Date.now() }).catch(() => {});
+  await signOut(auth);
+};
+
+/* ================= DELETE ACCOUNT ================= */
+function openDeleteAccountModal() {
+  if (!state.user) return;
+  $("del-acc-pass").value = "";
+  $("del-acc-pass-wrap").classList.add("hidden");
+  $("delete-account-modal").classList.remove("hidden");
+}
+$("btn-settings-delete-acc").onclick = openDeleteAccountModal;
+$("btn-profile-delete-acc").onclick = openDeleteAccountModal;
+$("btn-cancel-del-acc").onclick = () => $("delete-account-modal").classList.add("hidden");
+$("delete-account-modal").onclick = (e) => { if (e.target === $("delete-account-modal")) $("delete-account-modal").classList.add("hidden"); };
+
+$("btn-confirm-del-acc").onclick = async () => {
+  if (!state.user) return;
+  const btn = $("btn-confirm-del-acc"); btn.disabled = true;
+  try {
+    const passVal = $("del-acc-pass").value;
+    if (!$("del-acc-pass-wrap").classList.contains("hidden")) {
+      if (!passVal) { btn.disabled = false; return toast("Enter your password to confirm."); }
+      const cred = EmailAuthProvider.credential(state.user.email, passVal);
+      await reauthenticateWithCredential(state.user, cred);
+    }
+    const uid = state.user.uid, uname = state.profile?.username;
+    await Promise.all([
+      remove(ref(db, `users/${uid}`)).catch(() => {}),
+      uname ? remove(ref(db, `usernames/${uname}`)).catch(() => {}) : Promise.resolve(),
+      remove(ref(db, `userConversations/${uid}`)).catch(() => {}),
+      remove(ref(db, `userTokens/${uid}`)).catch(() => {}),
+      remove(ref(db, `userBlocks/${uid}`)).catch(() => {}),
+      remove(ref(db, `notifications/${uid}`)).catch(() => {}),
+      remove(ref(db, `callHistory/${uid}`)).catch(() => {}),
+      remove(ref(db, `businessProfiles/${uid}`)).catch(() => {})
+    ]);
+    await state.user.delete();
+    $("delete-account-modal").classList.add("hidden");
+    toast("Your account has been deleted.");
+  } catch (err) {
+    if (err.code === "auth/requires-recent-login") {
+      $("del-acc-pass-wrap").classList.remove("hidden");
+      toast("For security, enter your password and tap Delete Forever again.");
+    } else toast("Delete failed: " + err.message);
+  } finally { btn.disabled = false; }
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (state.isRegistering) return;
+  if (!user) {
+    cleanupSessionListeners();
+    state.user = null; state.profile = null; state.history = []; state.navDepth = 0;
+    navigate("screen-welcome", false);
+    return;
+  }
+  await bootSignedInUser(user);
+});
+
+async function bootSignedInUser(user) {
+  cleanupSessionListeners();
+  state.user = user;
+  state.sessionStartTs = Date.now();
+  try {
+    const profSnap = await get(ref(db, `users/${user.uid}`));
+    if (!profSnap.exists()) {
+      const fallbackProfile = {
+        uid: user.uid,
+        username: (user.email || "user").split("@")[0].toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 16) || "user",
+        displayName: user.displayName || (user.email || "User").split("@")[0],
+        email: user.email || "", status: "Available on Ek Kotha",
+        avatarColor: pickColor(user.uid), role: "user", online: true, lastSeen: Date.now(), blocked: false, createdAt: Date.now()
+      };
+      await set(ref(db, `users/${user.uid}`), fallbackProfile);
+      state.profile = fallbackProfile;
+    } else state.profile = profSnap.val();
+
+    if (state.profile.blocked) { toast("Your account has been suspended."); await signOut(auth); return; }
+
+    setupPresence(user.uid);
+    loadAdminSettings();
+    subscribeBlocks(user.uid);
+    subscribeConversations(user.uid);
+    subscribeCalls(user.uid);
+    subscribeCallHistory(user.uid);
+    subscribeNotifications(user.uid);
+    subscribeAnnouncements();
+    initFCM();
+
+    const openChatParam = new URLSearchParams(location.search).get("chat");
+    navigate("screen-home", false);
+    if (openChatParam) openConversationById(openChatParam);
+  } catch (err) {
+    toast("Database error: " + err.message);
+    navigate("screen-welcome", false);
+  }
+}
+
+function cleanupSessionListeners() {
+  state.unsubs.forEach((u) => u()); state.unsubs = [];
+  if (state.convUnsub) { state.convUnsub(); state.convUnsub = null; }
+  if (state.chatUnsub) { state.chatUnsub(); state.chatUnsub = null; }
+  Object.values(convDetailUnsubs).forEach((u) => u());
+  for (const k of Object.keys(convDetailUnsubs)) delete convDetailUnsubs[k];
+  state.conversations = {};
+}
+
+function setupPresence(uid) {
+  const connRef = ref(db, ".info/connected"), uRef = ref(db, `users/${uid}`);
+  const unsub = onValue(connRef, (snap) => {
+    if (snap.val() === true) {
+      onDisconnect(uRef).update({ online: false, lastSeen: serverTimestamp() });
+      update(uRef, { online: true, lastSeen: serverTimestamp() });
+    }
+  });
+  state.unsubs.push(unsub);
+}
+
+function loadAdminSettings() {
+  const unsub = onValue(ref(db, "adminSettings"), (snap) => {
+    if (snap.exists()) state.adminSettings = { ...state.adminSettings, ...snap.val() };
+  });
+  state.unsubs.push(unsub);
+}
+
+function subscribeBlocks(uid) {
+  const unsub = onValue(ref(db, `userBlocks/${uid}`), (snap) => {
+    state.blocks = snap.val() || {};
+    if (state.screen === "screen-user-profile" && state.viewingProfileUid) refreshUserProfileBlockRow(state.viewingProfileUid);
+  });
+  state.unsubs.push(unsub);
+}
+
+function subscribeAnnouncements() {
+  const unsub = onValue(query(ref(db, "announcements"), limitToLast(5)), (snap) => {
+    const box = $("home-announcements"); box.innerHTML = "";
+    const items = []; snap.forEach((c) => items.push(c.val()));
+    if (!items.length) {
+      box.appendChild(el("div", "muted", "No announcements."));
+      $("home-latest-announce").textContent = "No new announcements";
+      return;
+    }
+    const rev = items.reverse();
+    $("home-latest-announce").textContent = `${rev[0].title}: ${rev[0].body}`;
+    rev.forEach((a) => {
+      const card = el("div", "card-soft");
+      card.appendChild(el("div", "list-title", a.title));
+      card.appendChild(el("div", "muted", a.body));
+      box.appendChild(card);
+    });
+  });
+  state.unsubs.push(unsub);
+}
+
+/* ================= NOTIFICATIONS & FCM ================= */
+async function sendUserNotification(targetUid, title, body, type, convId = "") {
+  if (!state.user || !targetUid || targetUid === state.user.uid) return;
+  try {
+    const nRef = push(ref(db, `notifications/${targetUid}`));
+    await set(nRef, { id: nRef.key, senderId: state.user.uid, title, body, type, convId, read: false, createdAt: Date.now() });
+  } catch (_) {}
+}
+
+async function initFCM() {
+  if ("Notification" in window && Notification.permission === "default") $("push-prompt-card").classList.remove("hidden");
+  try {
+    const supported = await isSupported();
+    if (!supported || !("serviceWorker" in navigator)) { updatePushStatusUI(); return; }
+    state.messaging = getMessaging(app);
+    if (Notification.permission === "granted") await syncFcmToken(true);
+    onMessage(state.messaging, (payload) => {
+      const title = payload.notification?.title || "Ek Kotha";
+      const body = payload.notification?.body || "New notification";
+      const convId = payload.data?.convId;
+      if (convId && state.activeConvId === convId && document.visibilityState === "visible") return;
+      playChime();
+      toast(`${title}: ${body}`, () => { if (convId) openConversationById(convId); });
+    });
+    navigator.serviceWorker.addEventListener("message", (ev) => {
+      if (ev.data?.type === "OPEN_CONV" && ev.data.convId) openConversationById(ev.data.convId);
+    });
+  } catch (_) {}
+  updatePushStatusUI();
+}
+
+async function syncFcmToken(silent = false) {
+  if (!("Notification" in window)) return !silent && toast("Browser notifications not supported.");
+  const perm = await Notification.requestPermission();
+  $("push-prompt-card").classList.add("hidden");
+  updatePushStatusUI();
+  if (perm !== "granted") return !silent && toast("Notification permission denied.");
+  if (!silent) toast("Notifications enabled!");
+
+  if (state.messaging && "serviceWorker" in navigator && state.user) {
+    try {
+      const reg = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+      const token = await getToken(state.messaging, { vapidKey: VAPID_PUBLIC_KEY, serviceWorkerRegistration: reg });
+      if (token) {
+        const key = token.replace(/[.$#[\]/]/g, "_").slice(0, 120);
+        await set(ref(db, `userTokens/${state.user.uid}/${key}`), { token, updatedAt: Date.now(), ua: navigator.userAgent.slice(0, 80) });
+      }
+    } catch (_) {}
+  }
+}
+
+function updatePushStatusUI() {
+  if (!$("set-push-status")) return;
+  $("set-push-status").textContent = ("Notification" in window) ? `Permission: ${Notification.permission}` : "Not supported";
+}
+$("btn-enable-push").onclick = () => syncFcmToken(false);
+$("btn-settings-push").onclick = () => syncFcmToken(false);
+
+function subscribeNotifications(uid) {
+  const unsub = onValue(query(ref(db, `notifications/${uid}`), limitToLast(30)), (snap) => {
+    const box = $("notifications-list"); box.innerHTML = "";
+    let unread = 0; const list = [];
+    snap.forEach((c) => {
+      const v = c.val(); if (!v.read) unread++;
+      list.push(v);
+      if (!v.read && v.createdAt > state.sessionStartTs && !state.seenNotifIds.has(v.id)) {
+        state.seenNotifIds.add(v.id);
+        const viewingSameChat = v.convId && state.activeConvId === v.convId && document.visibilityState === "visible";
+        if (!viewingSameChat) {
+          playChime();
+          toast(`${v.title}: ${v.body}`, () => { if (v.convId) openConversationById(v.convId); });
+          if ("Notification" in window && Notification.permission === "granted" && document.visibilityState === "hidden") {
+            const osNotif = new Notification(v.title, { body: v.body, tag: v.convId || v.id });
+            osNotif.onclick = () => { window.focus(); if (v.convId) openConversationById(v.convId); };
+          }
+        }
+      }
+    });
+    $("notif-badge").textContent = unread;
+    $("notif-badge").classList.toggle("hidden", unread === 0);
+    if (!list.length) { box.appendChild(el("div", "muted text-center", "No notifications yet.")); return; }
+    list.reverse().forEach((n) => {
+      const item = el("div", "list-item");
+      const av = el("div", "avatar");
+      av.style.width = "40px"; av.style.height = "40px";
+      av.style.background = n.read ? "var(--surface-2)" : "var(--primary-soft)";
+      av.style.color = n.read ? "var(--text-muted)" : "var(--primary)";
+      av.innerHTML = iconSvg(n.type === "call" ? "phone" : "bell", 18);
+      const body = el("div", "list-body");
+      body.appendChild(el("div", "list-title", n.title));
+      body.appendChild(el("div", "list-sub", n.body));
+      body.appendChild(el("div", "msg-meta", fmtDate(n.createdAt) + " " + fmtTime(n.createdAt)));
+      item.append(av, body);
+      item.onclick = async () => {
+        await update(ref(db, `notifications/${uid}/${n.id}`), { read: true }).catch(() => {});
+        if (n.convId) openConversationById(n.convId);
+      };
+      box.appendChild(item);
+    });
+  });
+  state.unsubs.push(unsub);
+}
+
+$("btn-mark-notifs-read").onclick = async () => {
+  if (!state.user) return;
+  try {
+    const snap = await get(ref(db, `notifications/${state.user.uid}`));
+    const updates = {};
+    snap.forEach((c) => { if (!c.val().read) updates[`${c.key}/read`] = true; });
+    if (Object.keys(updates).length) await update(ref(db, `notifications/${state.user.uid}`), updates);
+  } catch (_) {}
+};
+
+/* ================= USER SEARCH & PROFILE VISIT ================= */
+async function loadAndRenderUserSearch() {
+  const box = $("user-search-results");
+  if (!Object.keys(state.usersCache).length) box.innerHTML = `<div class="muted text-center" style="padding:20px;">Loading users...</div>`;
+  try {
+    const snap = await get(ref(db, "users"));
+    snap.forEach((c) => { const u = c.val(); if (u && u.uid) state.usersCache[u.uid] = u; });
+  } catch (err) { toast("Could not load users: " + err.message); }
+  filterAndRenderUsers();
+}
+
+function filterAndRenderUsers() {
+  const qText = ($("user-search-input").value || "").trim().toLowerCase().replace(/^@/, "");
+  const box = $("user-search-results"); box.innerHTML = "";
+  const results = Object.values(state.usersCache).filter((u) => {
+    if (!u || !u.uid || u.uid === state.user.uid || u.blocked) return false;
+    return !qText || (u.username || "").toLowerCase().includes(qText) || (u.displayName || "").toLowerCase().includes(qText);
+  });
+  if (!results.length) { box.appendChild(el("div", "muted text-center", "No matching users found.")); return; }
+  results.slice(0, 40).forEach((u) => {
+    const dName = u.displayName || u.username || "User";
+    const row = el("div", "list-item");
+    const av = el("div", "avatar", initials(dName));
+    av.style.background = u.avatarColor || pickColor(u.username || u.uid);
+    if (u.online) av.appendChild(el("span", "online-dot"));
+    const body = el("div", "list-body");
+    body.appendChild(el("div", "list-title", dName));
+    body.appendChild(el("div", "list-sub", `@${u.username || "user"} • ${u.status || ""}`));
+    const actions = el("div", "btn-row"); actions.style.flexShrink = "0"; actions.style.flexWrap = "nowrap";
+    const chatBtn = el("button", "btn btn-sm", "Chat");
+    chatBtn.onclick = (e) => { e.stopPropagation(); startPersonalChat(u); };
+    const callBtn = el("button", "btn btn-sm btn-soft"); callBtn.innerHTML = iconSvg("phone", 16);
+    callBtn.onclick = (e) => { e.stopPropagation(); initiateCall(u.uid, dName, "audio"); };
+    actions.append(chatBtn, callBtn);
+    row.append(av, body, actions);
+    row.onclick = () => openUserProfile(u.uid);
+    box.appendChild(row);
+  });
+}
+$("user-search-input").oninput = filterAndRenderUsers;
+
+function refreshUserProfileBlockRow(uid) {
+  const isBlocked = !!state.blocks[uid];
+  $("up-block-title").textContent = isBlocked ? "Unblock User" : "Block User";
+  $("up-block-sub").textContent = isBlocked ? "Allow messages and calls again" : "Stop receiving messages or calls";
+}
+
+async function openUserProfile(targetUid) {
+  if (!targetUid) return;
+  if (targetUid === state.user.uid) return navigate("screen-profile");
+  state.viewingProfileUid = targetUid;
+  let u = state.usersCache[targetUid];
+  try {
+    const snap = await get(ref(db, `users/${targetUid}`));
+    if (snap.exists()) { u = snap.val(); state.usersCache[targetUid] = u; }
+  } catch (_) {}
+
+  if (!u) u = { uid: targetUid, displayName: "Ek Kotha User", username: "user", status: "Available", avatarColor: "#0038d8" };
+  const dName = u.displayName || u.username || "User";
+  $("up-avatar-txt").textContent = initials(dName);
+  $("up-avatar").style.background = u.avatarColor || pickColor(u.username || targetUid);
+  $("up-online-dot").classList.toggle("hidden", !u.online);
+  $("up-name").textContent = dName;
+  $("up-username").textContent = u.username ? `@${u.username}` : "";
+  $("up-presence").textContent = u.online ? "Online" : (u.lastSeen ? `Last seen ${fmtDate(u.lastSeen)} ${fmtTime(u.lastSeen)}` : "Offline");
+  $("up-status").textContent = u.status || "Available on Ek Kotha";
+  refreshUserProfileBlockRow(targetUid);
+
+  $("btn-up-chat").onclick = () => startPersonalChat(u);
+  $("btn-up-audio").onclick = () => initiateCall(targetUid, dName, "audio");
+  $("btn-up-video").onclick = () => initiateCall(targetUid, dName, "video");
+  $("btn-up-block").onclick = () => toggleBlockUser(targetUid, dName);
+  $("btn-up-report").onclick = () => openUserReportReasons(targetUid);
+  navigate("screen-user-profile");
+}
+
+async function toggleBlockUser(targetUid, targetName = "User") {
+  const isBlocked = !!state.blocks[targetUid];
+  try {
+    if (isBlocked) { await remove(ref(db, `userBlocks/${state.user.uid}/${targetUid}`)); toast(`${targetName} unblocked.`); }
+    else { await set(ref(db, `userBlocks/${state.user.uid}/${targetUid}`), true); toast(`${targetName} blocked.`); }
+    if (state.screen === "screen-chat-room" && state.activePeerId === targetUid) openChatRoom(state.activeConvId, targetUid);
+  } catch (err) { toast("Action failed: " + err.message); }
+}
+
+function openUserReportReasons(targetUid) {
+  openActionSheet([
+    { label: "Spam / Unsolicited messages", icon: "flag", onClick: () => submitReport("Spam User", null, targetUid) },
+    { label: "Harassment / Abuse", icon: "flag", danger: true, onClick: () => submitReport("Harassment / Abuse", null, targetUid) },
+    { label: "Scam / Fraud", icon: "flag", danger: true, onClick: () => submitReport("Scam / Fraud", null, targetUid) }
+  ], "Report User");
+}
+
+/* ================= GROUP CREATION & GROUP ADMIN ================= */
+async function loadNewGroupScreen() {
+  state.groupPickSelected = new Set();
+  $("grp-name-input").value = ""; $("grp-member-search").value = "";
+  $("grp-selected-count").textContent = "0 selected";
+  try {
+    const snap = await get(ref(db, "users"));
+    snap.forEach((c) => { const u = c.val(); if (u && u.uid) state.usersCache[u.uid] = u; });
+  } catch (_) {}
+  renderGroupPickList();
+}
+$("grp-member-search").oninput = renderGroupPickList;
+
+function renderGroupPickList() {
+  const qText = ($("grp-member-search").value || "").trim().toLowerCase().replace(/^@/, "");
+  const box = $("grp-users-pick-list"); box.innerHTML = "";
+  const users = Object.values(state.usersCache).filter((u) => {
+    if (!u || !u.uid || u.uid === state.user.uid || u.blocked) return false;
+    return !qText || (u.username || "").toLowerCase().includes(qText) || (u.displayName || "").toLowerCase().includes(qText);
+  });
+  if (!users.length) { box.appendChild(el("div", "muted text-center", "No users found.")); return; }
+  users.forEach((u) => {
+    const dName = u.displayName || u.username || "User";
+    const row = el("div", "list-item");
+    const av = el("div", "avatar", initials(dName));
+    av.style.width = "40px"; av.style.height = "40px"; av.style.background = u.avatarColor || "#0038d8";
+    const body = el("div", "list-body");
+    body.appendChild(el("div", "list-title", dName));
+    body.appendChild(el("div", "list-sub", `@${u.username || "user"}`));
+    const chk = document.createElement("input");
+    chk.type = "checkbox"; chk.style.width = "20px"; chk.style.height = "20px"; chk.style.flexShrink = "0";
+    chk.checked = state.groupPickSelected.has(u.uid);
+    const toggle = () => {
+      if (state.groupPickSelected.has(u.uid)) state.groupPickSelected.delete(u.uid);
+      else state.groupPickSelected.add(u.uid);
+      chk.checked = state.groupPickSelected.has(u.uid);
+      $("grp-selected-count").textContent = `${state.groupPickSelected.size} selected`;
+    };
+    chk.onclick = (e) => { e.stopPropagation(); toggle(); };
+    row.onclick = toggle;
+    row.append(av, body, chk);
+    box.appendChild(row);
+  });
+}
+
+$("btn-create-group-submit").onclick = async () => {
+  const name = $("grp-name-input").value.trim();
+  if (!name) return toast("Enter a group name.");
+  if (state.groupPickSelected.size < 1) return toast("Select at least 1 member.");
+  const btn = $("btn-create-group-submit"); btn.disabled = true;
+  try {
+    const uid = state.user.uid, myName = state.profile?.displayName || "User";
+    const grpRef = push(ref(db, "conversations")), cid = grpRef.key;
+    const participants = { [uid]: true };
+    const participantMeta = { [uid]: { name: myName, username: state.profile?.username || "user", color: state.profile?.avatarColor || "#0038d8" } };
+    const unread = { [uid]: 0 };
+
+    state.groupPickSelected.forEach((mid) => {
+      const m = state.usersCache[mid];
+      participants[mid] = true; unread[mid] = 0;
+      participantMeta[mid] = { name: m?.displayName || "User", username: m?.username || "", color: m?.avatarColor || "#0038d8" };
+    });
+
+    await set(grpRef, {
+      id: cid, type: "group", groupName: name, createdBy: uid, admins: { [uid]: true },
+      participants, participantMeta, lastMessage: `${myName} created group "${name}"`,
+      lastSenderId: uid, lastTimestamp: Date.now(), unread
+    });
+    await Promise.all(Object.keys(participants).map(async (mid) => {
+      await set(ref(db, `userConversations/${mid}/${cid}`), true).catch(() => {});
+      if (mid !== uid) await sendUserNotification(mid, name, `${myName} added you to group "${name}"`, "message", cid);
+    }));
+    toast("Group created!");
+    openChatRoom(cid, null);
+  } catch (err) { toast("Could not create group: " + err.message); }
+  finally { btn.disabled = false; }
+};
+
+async function renderGroupInfo() {
+  const cid = state.activeConvId, conv = state.conversations[cid];
+  if (!conv || conv.type !== "group") return;
+  const myUid = state.user.uid, isAdmin = !!conv.admins?.[myUid], memberIds = Object.keys(conv.participants || {});
+  $("gi-avatar").textContent = initials(conv.groupName);
+  $("gi-avatar").style.background = pickColor(conv.groupName);
+  $("gi-name").textContent = conv.groupName;
+  $("gi-meta").textContent = `Group • ${memberIds.length} members`;
+  $("gi-rename-input").value = conv.groupName;
+  $("gi-admin-edit-wrap").classList.toggle("hidden", !isAdmin);
+  $("gi-add-member-card").classList.toggle("hidden", !isAdmin);
+
+  const mBox = $("gi-members-list"); mBox.innerHTML = "";
+  for (const mid of memberIds) {
+    let u = state.usersCache[mid] || conv.participantMeta?.[mid];
+    if (!u || !u.displayName) {
+      try { const s = await get(ref(db, `users/${mid}`)); if (s.exists()) { u = s.val(); state.usersCache[mid] = u; } } catch (_) {}
+    }
+    const dName = u?.displayName || u?.name || "User";
+    const row = el("div", "list-item");
+    const av = el("div", "avatar", initials(dName));
+    av.style.width = "40px"; av.style.height = "40px"; av.style.background = u?.avatarColor || u?.color || "#0038d8";
+    const body = el("div", "list-body");
+    const title = el("div", "list-title", dName + (mid === myUid ? " (You)" : ""));
+    if (conv.admins?.[mid]) title.appendChild(el("span", "pill", "Admin"));
+    body.appendChild(title);
+    body.appendChild(el("div", "list-sub", u?.username ? `@${u.username}` : ""));
+    row.append(av, body);
+    row.onclick = () => openUserProfile(mid);
+
+    if (isAdmin && mid !== myUid) {
+      const more = el("button", "icon-btn"); more.innerHTML = iconSvg("more", 18);
+      more.onclick = (e) => {
+        e.stopPropagation();
+        const targetIsAdmin = !!conv.admins?.[mid];
+        openActionSheet([
+          { icon: "user", label: "View Profile", onClick: () => openUserProfile(mid) },
+          {
+            icon: "shield", label: targetIsAdmin ? "Dismiss as Admin" : "Make Group Admin",
+            onClick: async () => {
+              if (targetIsAdmin) await remove(ref(db, `conversations/${cid}/admins/${mid}`));
+              else await set(ref(db, `conversations/${cid}/admins/${mid}`), true);
+              toast(targetIsAdmin ? "Admin removed" : "Promoted to Admin");
+              renderGroupInfo();
+            }
+          },
+          {
+            icon: "trash", label: `Remove ${dName}`, danger: true,
+            onClick: async () => {
+              await remove(ref(db, `conversations/${cid}/participants/${mid}`));
+              await remove(ref(db, `conversations/${cid}/admins/${mid}`));
+              await remove(ref(db, `userConversations/${mid}/${cid}`)).catch(() => {});
+              toast("Member removed.");
+              renderGroupInfo();
+            }
+          }
+        ], dName);
+      };
+      row.appendChild(more);
+    }
+    mBox.appendChild(row);
+  }
+  if (isAdmin) renderGroupAddSearch(cid, memberIds);
+}
+
+async function renderGroupAddSearch(cid, existingIds) {
+  try { const snap = await get(ref(db, "users")); snap.forEach((c) => { const u = c.val(); if (u && u.uid) state.usersCache[u.uid] = u; }); } catch (_) {}
+  const renderList = () => {
+    const q = ($("gi-add-search").value || "").trim().toLowerCase().replace(/^@/, "");
+    const box = $("gi-add-results"); box.innerHTML = "";
+    const candidates = Object.values(state.usersCache).filter((u) => {
+      if (!u || !u.uid || existingIds.includes(u.uid) || u.blocked) return false;
+      return !q || (u.username || "").toLowerCase().includes(q) || (u.displayName || "").toLowerCase().includes(q);
+    });
+    candidates.slice(0, 6).forEach((u) => {
+      const row = el("div", "list-item");
+      row.appendChild(el("div", "list-body", `${u.displayName || "User"} (@${u.username || "user"})`));
+      const btn = el("button", "btn btn-sm", "Add");
+      btn.onclick = async () => {
+        await set(ref(db, `conversations/${cid}/participants/${u.uid}`), true);
+        await set(ref(db, `conversations/${cid}/participantMeta/${u.uid}`), { name: u.displayName || "User", username: u.username || "", color: u.avatarColor || "#0038d8" });
+        await set(ref(db, `userConversations/${u.uid}/${cid}`), true).catch(() => {});
+        await sendUserNotification(u.uid, state.conversations[cid].groupName, `${state.profile?.displayName || "Admin"} added you to group.`, "message", cid);
+        toast(`${u.displayName || "User"} added!`);
+        renderGroupInfo();
+      };
+      row.appendChild(btn); box.appendChild(row);
+    });
+  };
+  $("gi-add-search").oninput = renderList;
+  renderList();
+}
+
+$("btn-gi-rename").onclick = async () => {
+  const cid = state.activeConvId, newName = $("gi-rename-input").value.trim();
+  if (!newName) return toast("Enter group name.");
+  await update(ref(db, `conversations/${cid}`), { groupName: newName });
+  toast("Group renamed!"); renderGroupInfo();
+};
+
+$("btn-gi-leave").onclick = async () => {
+  const cid = state.activeConvId, uid = state.user.uid;
+  await remove(ref(db, `conversations/${cid}/participants/${uid}`));
+  await remove(ref(db, `conversations/${cid}/admins/${uid}`));
+  await remove(ref(db, `userConversations/${uid}/${cid}`));
+  toast("Left group."); navigate("screen-home");
+};
+
+/* ================= HOME CHAT LIST ================= */
+$("home-filters").addEventListener("click", (e) => {
+  const chip = e.target.closest(".filter-chip");
+  if (!chip) return;
+  state.chatFilter = chip.dataset.filter;
+  document.querySelectorAll(".filter-chip").forEach((c) => c.classList.toggle("active", c === chip));
+  renderChatList();
+});
+
+function subscribeConversations(uid) {
+  state.convUnsub = onValue(ref(db, `userConversations/${uid}`), (snap) => {
+    const activeIds = new Set();
+    snap.forEach((c) => { if (c.val()) activeIds.add(c.key); });
+    Object.keys(convDetailUnsubs).forEach((cid) => {
+      if (!activeIds.has(cid)) { convDetailUnsubs[cid](); delete convDetailUnsubs[cid]; delete state.conversations[cid]; }
+    });
+    activeIds.forEach((cid) => {
+      if (convDetailUnsubs[cid]) return;
+      convDetailUnsubs[cid] = onValue(ref(db, `conversations/${cid}`), (cSnap) => {
+        if (cSnap.exists()) state.conversations[cid] = cSnap.val();
+        else delete state.conversations[cid];
+        renderChatList();
+      });
+    });
+    if (activeIds.size === 0) renderChatList();
+  });
+}
+
+function openChatBoxHoldMenu(conv, peerId, metaName) {
+  const cid = conv.id, isGroup = conv.type === "group", items = [];
+  if (isGroup) {
+    items.push({ icon: "users", label: "Group Info", onClick: () => { state.activeConvId = cid; state.activePeerId = null; navigate("screen-group-info"); } });
+  } else if (peerId) {
+    const isBlocked = !!state.blocks[peerId];
+    items.push({ icon: "user", label: "Visit Profile", onClick: () => openUserProfile(peerId) });
+    items.push({ icon: "block", label: isBlocked ? "Unblock User" : "Block User", onClick: () => toggleBlockUser(peerId, metaName) });
+    items.push({ icon: "flag", label: "Report User", onClick: () => openUserReportReasons(peerId) });
+  }
+  items.push({
+    icon: "trash", label: "Delete Chat", danger: true,
+    onClick: async () => {
+      await update(ref(db, `conversations/${cid}/deletedAt`), { [state.user.uid]: Date.now() }).catch(() => {});
+      await remove(ref(db, `userConversations/${state.user.uid}/${cid}`)).catch(() => {});
+      toast("Chat deleted.");
+    }
+  });
+  items.push({ icon: "userX", label: "Delete Account", danger: true, onClick: openDeleteAccountModal });
+  openActionSheet(items, metaName);
+}
+
+function renderChatList() {
+  const box = $("chat-list-container"), filterText = ($("chat-search-input").value || "").trim().toLowerCase();
+  box.innerHTML = "";
+  const uid = state.user.uid;
+  const list = Object.values(state.conversations).sort((a, b) => (b.lastTimestamp || 0) - (a.lastTimestamp || 0));
+
+  let totalUnread = 0, visibleCount = 0;
+  list.forEach((conv) => {
+    const delTs = conv.deletedAt?.[uid] || 0;
+    if (delTs && (conv.lastTimestamp || 0) <= delTs) return;
+    const isGroup = conv.type === "group";
+    const peerId = isGroup ? null : Object.keys(conv.participants || {}).find((id) => id !== uid);
+    if (!isGroup && !peerId) return;
+
+    const unread = conv.unread?.[uid] || 0;
+    totalUnread += unread;
+
+    if (state.chatFilter === "unread" && unread === 0) return;
+    if (state.chatFilter === "groups" && !isGroup) return;
+    if (state.chatFilter === "business" && conv.type !== "business") return;
+
+    const meta = isGroup
+      ? { name: conv.groupName || "Group", color: pickColor(conv.groupName) }
+      : (conv.participantMeta?.[peerId] || { name: "User", username: "", color: "#0038d8" });
+
+    if (filterText && !(meta.name || "").toLowerCase().includes(filterText) && !(conv.lastMessage || "").toLowerCase().includes(filterText)) return;
+
+    visibleCount++;
+    const item = el("div", "wa-chat-row");
+    const av = el("div", "avatar", initials(meta.name)); av.style.background = meta.color || "#0038d8";
+    const body = el("div", "list-body");
+    const top = el("div", "list-top");
+    const titleEl = el("div", "list-title");
+    if (conv.type === "business" || isGroup) {
+      const icoSpan = el("span"); icoSpan.style.color = "var(--primary)"; icoSpan.innerHTML = iconSvg(isGroup ? "users" : "biz", 14);
+      titleEl.appendChild(icoSpan);
+    }
+    titleEl.appendChild(document.createTextNode(meta.name || "User"));
+    if (conv.label) titleEl.appendChild(el("span", "pill", conv.label));
+
+    const timeEl = el("div", "msg-meta", fmtTime(conv.lastTimestamp));
+    if (unread > 0) timeEl.style.color = "var(--primary)";
+    top.append(titleEl, timeEl);
+
+    const subRow = el("div", "list-top"); subRow.style.marginTop = "3px";
+    const subLeft = el("div", "list-sub");
+    if (conv.lastSenderId === uid && !isGroup && !conv.typing?.[peerId]) {
+      const tickSpan = el("span"); tickSpan.style.color = "var(--primary)"; tickSpan.innerHTML = iconSvg("checkDouble", 14);
+      subLeft.appendChild(tickSpan);
+    }
+    const lastTxt = (!isGroup && conv.typing?.[peerId]) ? "typing..." : (conv.lastMessage || "Tap to start chatting");
+    subLeft.appendChild(document.createTextNode(lastTxt));
+    subRow.appendChild(subLeft);
+    if (unread > 0) subRow.appendChild(el("span", "unread-pill", String(unread)));
+
+    body.append(top, subRow);
+    item.append(av, body);
+    const holdState = attachHoldHandler(item, () => openChatBoxHoldMenu(conv, peerId, meta.name));
+    item.onclick = () => { if (!holdState.consumeHold()) openChatRoom(conv.id, peerId); };
+    box.appendChild(item);
+  });
+
+  if (!visibleCount) {
+    const empty = el("div", "muted text-center", "No conversations yet. Tap + to chat or create a group.");
+    empty.style.padding = "36px 16px";
+    box.appendChild(empty);
+  }
+  $("chip-unread").textContent = totalUnread > 0 ? `Unread (${totalUnread})` : "Unread";
+  $("nav-unread-badge").textContent = totalUnread;
+  $("nav-unread-badge").classList.toggle("hidden", totalUnread === 0);
+}
+$("chat-search-input").oninput = renderChatList;
+
+async function startPersonalChat(peer) {
+  if (!state.user || !peer || !peer.uid) return;
+  const uid = state.user.uid, cid = personalConvId(uid, peer.uid), cRef = ref(db, `conversations/${cid}`);
+  const myName = state.profile?.displayName || state.user.email || "User";
+  const myUsername = state.profile?.username || "user";
+  const myColor = state.profile?.avatarColor || "#0038d8";
+  const peerName = peer.displayName || peer.username || "User";
+
+  try {
+    let exists = !!state.conversations[cid];
+    if (!exists) { try { exists = (await get(cRef)).exists(); } catch (_) { exists = false; } }
+    if (!exists) {
+      const newConv = {
+        id: cid, type: "personal", businessId: "", participants: { [uid]: true, [peer.uid]: true },
+        participantMeta: {
+          [uid]: { name: myName, username: myUsername, color: myColor },
+          [peer.uid]: { name: peerName, username: peer.username || "", color: peer.avatarColor || "#0038d8" }
+        },
+        lastMessage: "", lastSenderId: "", lastTimestamp: Date.now(), unread: { [uid]: 0, [peer.uid]: 0 }
+      };
+      await set(cRef, newConv);
+      state.conversations[cid] = newConv;
+    }
+    await set(ref(db, `userConversations/${uid}/${cid}`), true);
+    await set(ref(db, `userConversations/${peer.uid}/${cid}`), true).catch(() => {});
+    openChatRoom(cid, peer.uid);
+  } catch (err) { toast("Unable to start chat: " + err.message); }
+}
+
+async function openConversationById(cid) {
+  try {
+    const snap = await get(ref(db, `conversations/${cid}`));
+    if (!snap.exists()) return toast("Conversation not found.");
+    const conv = snap.val();
+    const peerId = conv.type === "group" ? null : Object.keys(conv.participants || {}).find((id) => id !== state.user.uid);
+    openChatRoom(cid, peerId);
+  } catch (err) { toast("Cannot open conversation: " + err.message); }
+}
+
+/* ================= CHAT ROOM ================= */
+let peerStatusUnsub = null, convRoomUnsub = null;
+
+$("btn-onetime-toggle").onclick = () => {
+  state.oneTimeComposer = !state.oneTimeComposer;
+  $("btn-onetime-toggle").classList.toggle("active", state.oneTimeComposer);
+  $("msg-input").placeholder = state.oneTimeComposer ? "One-time message (vanishes after viewing)..." : "Message or paste a video link...";
+};
+
+async function openChatRoom(cid, peerId) {
+  leaveChatRoom();
+  state.activeConvId = cid; state.activePeerId = peerId; state.replyTo = null; state.msgLimit = 30;
+  state.oneTimeComposer = false;
+  $("btn-onetime-toggle").classList.remove("active");
+  $("msg-input").placeholder = "Message or paste a video link...";
+  $("reply-preview").classList.add("hidden");
+  $("chat-quick-replies").classList.add("hidden");
+  $("chat-biz-label-bar").classList.add("hidden");
+
+  let conv = state.conversations[cid];
+  if (!conv) {
+    try { const s = await get(ref(db, `conversations/${cid}`)); if (s.exists()) { conv = s.val(); state.conversations[cid] = conv; } } catch (_) {}
+  }
+  const isGroup = conv?.type === "group";
+  navigate("screen-chat-room");
+
+  if (isGroup) {
+    refreshChatRoomTopbar();
+    $("chat-blocked-notice").classList.add("hidden");
+    $("form-send-msg").classList.remove("hidden");
+  } else if (peerId) {
+    try { const pSnap = await get(ref(db, `users/${peerId}`)); if (pSnap.exists()) state.usersCache[peerId] = pSnap.val(); } catch (_) {}
+    let theyBlockedMe = false;
+    try { theyBlockedMe = (await get(ref(db, `userBlocks/${peerId}/${state.user.uid}`))).exists(); } catch (_) {}
+    const isBlocked = !!state.blocks[peerId] || theyBlockedMe;
+    $("chat-blocked-notice").classList.toggle("hidden", !isBlocked);
+    $("form-send-msg").classList.toggle("hidden", isBlocked);
+    refreshChatRoomTopbar();
+
+    peerStatusUnsub = onValue(ref(db, `users/${peerId}`), (s) => {
+      const u = s.val(); if (!u) return;
+      state.usersCache[peerId] = u;
+      if (state.screen === "screen-chat-room") refreshChatRoomTopbar();
+    });
+  }
+
+  if (conv?.type === "business" && conv.businessId === state.user.uid) {
+    try {
+      const bizSnap = await get(ref(db, `businessProfiles/${state.user.uid}`));
+      if (bizSnap.exists()) {
+        const biz = bizSnap.val();
+        if ((biz.plan === "STARTER" || biz.plan === "PRO") && biz.quickReplies) {
+          const qrBox = $("chat-quick-replies"); qrBox.innerHTML = "";
+          Object.values(biz.quickReplies).forEach((q) => {
+            const c = el("button", "chip", q.title); c.type = "button";
+            c.onclick = () => { $("msg-input").value = q.text; $("msg-input").focus(); };
+            qrBox.appendChild(c);
+          });
+          if (qrBox.children.length) qrBox.classList.remove("hidden");
+        }
+        if (biz.plan === "PRO") {
+          const lbBox = $("chat-biz-label-bar"); lbBox.innerHTML = "";
+          ["New Order", "Pending", "Paid", "VIP", "Clear"].forEach((lbl) => {
+            const b = el("button", "chip", lbl); b.type = "button";
+            b.onclick = async () => { await update(ref(db, `conversations/${cid}`), { label: lbl === "Clear" ? "" : lbl }); toast(`Label updated: ${lbl}`); };
+            lbBox.appendChild(b);
+          });
+          lbBox.classList.remove("hidden");
+        }
+      }
+    } catch (_) {}
+  }
+
+  convRoomUnsub = onValue(ref(db, `conversations/${cid}`), (s) => {
+    const c = s.val(); if (!c) return;
+    state.conversations[cid] = c;
+    if (state.screen === "screen-chat-room") refreshChatRoomTopbar();
+    if ((c.unread?.[state.user.uid] || 0) > 0) update(ref(db, `conversations/${cid}/unread`), { [state.user.uid]: 0 }).catch(() => {});
+  });
+
+  listenMessages(cid);
+}
+
+function attachHoldHandler(elem, onHold) {
+  let tm = null, startX = 0, startY = 0, didHold = false, resetTm = null;
+  elem.addEventListener("pointerdown", (e) => {
+    clearTimeout(resetTm);
+    didHold = false; startX = e.clientX; startY = e.clientY;
+    tm = setTimeout(() => {
+      didHold = true;
+      if (navigator.vibrate) navigator.vibrate(25);
+      onHold();
+    }, 450);
+  });
+  elem.addEventListener("pointermove", (e) => {
+    if (tm && Math.hypot(e.clientX - startX, e.clientY - startY) > 12) { clearTimeout(tm); tm = null; }
+  });
+  elem.addEventListener("pointerup", () => {
+    clearTimeout(tm); tm = null;
+    if (didHold) resetTm = setTimeout(() => { didHold = false; }, 140);
+  });
+  elem.addEventListener("pointercancel", () => { clearTimeout(tm); tm = null; didHold = false; });
+  elem.addEventListener("contextmenu", (e) => {
+    e.preventDefault(); clearTimeout(tm); tm = null; didHold = true; onHold();
+    resetTm = setTimeout(() => { didHold = false; }, 140);
+  });
+  return {
+    consumeHold: () => { if (didHold) { didHold = false; return true; } return false; }
+  };
+}
+
+function listenMessages(cid) {
+  if (state.chatUnsub) state.chatUnsub();
+  state.triedReadIds.clear();
+  const q = query(ref(db, `messages/${cid}`), orderByChild("timestamp"), limitToLast(state.msgLimit));
+  state.chatUnsub = onValue(q, (snap) => {
+    const box = $("chat-messages-box"); box.innerHTML = "";
+    const conv = state.conversations[cid] || {}, isGroup = conv.type === "group", delTs = conv.deletedAt?.[state.user.uid] || 0;
+    const msgs = [], toMarkRead = [];
+
+    snap.forEach((c) => {
+      const m = c.val();
+      if (m.timestamp <= delTs || m.deletedFor?.[state.user.uid]) return;
+      msgs.push(m);
+      if (m.senderId !== state.user.uid && m.status !== "read" && !isGroup && !state.triedReadIds.has(m.id)) {
+        state.triedReadIds.add(m.id);
+        toMarkRead.push(m.id);
+      }
+    });
+    toMarkRead.forEach((mid) => {
+      set(ref(db, `messages/${cid}/${mid}/status`), "read").catch(() => {});
+    });
+    $("btn-load-older").classList.toggle("hidden", msgs.length < state.msgLimit);
+
+    let lastDateStr = "";
+    msgs.forEach((m) => {
+      const dStr = fmtDate(m.timestamp);
+      if (dStr !== lastDateStr) { lastDateStr = dStr; box.appendChild(el("div", "date-pill", dStr)); }
+      const isMe = m.senderId === state.user.uid;
+      const row = el("div", `msg-row ${isMe ? "me" : "them"}`); row.id = `msg-${m.id}`;
+      const bubble = el("div", "bubble");
+      const senderMeta = conv.participantMeta?.[m.senderId] || state.usersCache[m.senderId];
+      const senderName = isMe ? (state.profile?.displayName || "You") : (senderMeta?.name || senderMeta?.displayName || "User");
+
+      if (isGroup && !isMe && !m.deletedForEveryone) {
+        const sName = el("div", "msg-sender-name", senderName);
+        sName.style.color = senderMeta?.color || pickColor(senderName);
+        bubble.appendChild(sName);
+      }
+
+      if (m.deletedForEveryone) {
+        const delDiv = el("div", "msg-deleted");
+        delDiv.innerHTML = `${iconSvg("block", 14)} <span>This message was deleted</span>`;
+        bubble.appendChild(delDiv);
+      } else if (m.oneTime) {
+        if (m.oneTimeOpened) {
+          const op = el("div", "msg-deleted");
+          op.innerHTML = `${iconSvg("clock", 14)} <span>One-time message opened</span>`;
+          bubble.appendChild(op);
+        } else {
+          const ot = el("div", "msg-onetime-pill");
+          ot.innerHTML = `${iconSvg("lock", 16)} <span>${isMe ? "One-time message sent" : "One-time message • Tap to open"}</span>`;
+          bubble.appendChild(ot);
+        }
+      } else {
+        if (m.forwarded) {
+          const fw = el("div", "msg-deleted"); fw.style.fontSize = "0.72rem"; fw.style.marginBottom = "3px";
+          fw.innerHTML = `${iconSvg("share", 12)} <span>Forwarded</span>`;
+          bubble.appendChild(fw);
+        }
+        if (m.replyTo) {
+          const rq = el("div", "reply-quote");
+          rq.appendChild(el("strong", "", m.replyTo.senderName + ": "));
+          rq.appendChild(document.createTextNode(m.replyTo.text.slice(0, 80)));
+          rq.onclick = (ev) => {
+            ev.stopPropagation();
+            const target = document.getElementById(`msg-${m.replyTo.id}`);
+            if (target) { target.scrollIntoView({ behavior: "smooth", block: "center" }); target.classList.add("flash"); setTimeout(() => target.classList.remove("flash"), 1200); }
+          };
+          bubble.appendChild(rq);
+        }
+        const txtDiv = el("div");
+        renderMessageTextWithLinks(txtDiv, m.text);
+        bubble.appendChild(txtDiv);
+      }
+
+      const footer = el("div", "bubble-footer");
+      footer.appendChild(document.createTextNode(`${m.isAuto ? "Auto • " : ""}${fmtTime(m.timestamp)}`));
+      if (isMe && !m.deletedForEveryone) {
+        const tick = el("span"); tick.style.display = "inline-flex";
+        tick.innerHTML = iconSvg(m.status === "read" ? "checkDouble" : "check", 13, m.status === "read" ? "#93c5fd" : "currentColor");
+        footer.appendChild(tick);
+      }
+      bubble.appendChild(footer);
+
+      const holdState = attachHoldHandler(bubble, () => openMessageActions(cid, m, isMe, senderName));
+      bubble.onclick = () => {
+        if (holdState.consumeHold()) return;
+        if (m.oneTime && !m.oneTimeOpened && !isMe && !m.deletedForEveryone) openOneTimeViewer(cid, m);
+      };
+      row.appendChild(bubble); box.appendChild(row);
+    });
+    box.scrollTop = box.scrollHeight;
+  });
+}
+
+let activeOneTimeCtx = null;
+function openOneTimeViewer(cid, m) {
+  activeOneTimeCtx = { cid, msgId: m.id };
+  $("onetime-modal-text").textContent = m.text;
+  $("onetime-modal").classList.remove("hidden");
+}
+$("btn-close-onetime").onclick = async () => {
+  $("onetime-modal").classList.add("hidden");
+  if (activeOneTimeCtx) {
+    const { cid, msgId } = activeOneTimeCtx; activeOneTimeCtx = null;
+    await update(ref(db, `messages/${cid}/${msgId}`), { oneTimeOpened: true, text: "One-time message opened" }).catch(() => {});
+  }
+};
+
+function openMessageActions(cid, m, isMe, senderName) {
+  const actions = [];
+  if (isMe) {
+    actions.push({
+      icon: "trash", label: "Delete for me",
+      onClick: async () => { await update(ref(db, `messages/${cid}/${m.id}/deletedFor`), { [state.user.uid]: true }); toast("Deleted for you."); }
+    });
+    if (!m.deletedForEveryone) {
+      actions.push({
+        icon: "trash", label: "Delete for everybody", danger: true,
+        onClick: async () => { await update(ref(db, `messages/${cid}/${m.id}`), { text: "This message was deleted", deletedForEveryone: true, replyTo: null }); toast("Deleted for everybody."); }
+      });
+      if (!m.oneTime) {
+        actions.push({
+          icon: "clock", label: "One Time Using",
+          onClick: async () => { await update(ref(db, `messages/${cid}/${m.id}`), { oneTime: true, oneTimeOpened: false }); toast("Converted to One-Time message."); }
+        });
+      }
+      actions.push({
+        icon: "reply", label: "Reply",
+        onClick: () => {
+          state.replyTo = { id: m.id, senderName, text: m.text };
+          $("reply-preview-name").textContent = senderName; $("reply-preview-text").textContent = m.text;
+          $("reply-preview").classList.remove("hidden"); $("msg-input").focus();
+        }
+      });
+      actions.push({ icon: "share", label: "Share", onClick: () => openSharePicker(m) });
+      actions.push({
+        icon: "copy", label: "Copy Text",
+        onClick: async () => { try { await navigator.clipboard.writeText(m.text); toast("Copied!"); } catch (_) { toast("Copy failed."); } }
+      });
+    }
+  } else {
+    if (!m.deletedForEveryone && !m.oneTime) {
+      actions.push({
+        icon: "reply", label: "Reply",
+        onClick: () => {
+          state.replyTo = { id: m.id, senderName, text: m.text };
+          $("reply-preview-name").textContent = senderName; $("reply-preview-text").textContent = m.text;
+          $("reply-preview").classList.remove("hidden"); $("msg-input").focus();
+        }
+      });
+      actions.push({ icon: "share", label: "Share", onClick: () => openSharePicker(m) });
+      actions.push({
+        icon: "copy", label: "Copy Text",
+        onClick: async () => { try { await navigator.clipboard.writeText(m.text); toast("Copied!"); } catch (_) { toast("Copy failed."); } }
+      });
+    }
+    actions.push({
+      icon: "trash", label: "Delete Message",
+      onClick: async () => { await update(ref(db, `messages/${cid}/${m.id}/deletedFor`), { [state.user.uid]: true }); toast("Message deleted for you."); }
+    });
+    actions.push({ icon: "user", label: `View ${senderName}'s Profile`, onClick: () => openUserProfile(m.senderId) });
+    actions.push({ icon: "block", label: state.blocks[m.senderId] ? "Unblock User" : "Block User", onClick: () => toggleBlockUser(m.senderId, senderName) });
+    if (!m.deletedForEveryone) {
+      actions.push({
+        icon: "flag", label: "Report", danger: true,
+        onClick: () => {
+          openActionSheet([
+            { icon: "flag", label: "Spam / Unwanted Link", onClick: () => submitReport("Spam Message", m) },
+            { icon: "flag", label: "Abuse / Harassment", danger: true, onClick: () => submitReport("Abusive Message", m) },
+            { icon: "flag", label: "Scam / Fraud", danger: true, onClick: () => submitReport("Scam Message", m) }
+          ], "Report Message");
+        }
+      });
+    }
+  }
+  openActionSheet(actions, isMe ? "Your Message" : `Message from ${senderName}`);
+}
+
+async function openSharePicker(m) {
+  try { const snap = await get(ref(db, "users")); snap.forEach((c) => { const u = c.val(); if (u && u.uid) state.usersCache[u.uid] = u; }); } catch (_) {}
+  const targets = [];
+  Object.values(state.conversations).forEach((conv) => {
+    if (conv.type === "group") targets.push({ icon: "users", label: `Group: ${conv.groupName}`, convId: conv.id });
+  });
+  Object.values(state.usersCache).forEach((u) => {
+    if (u.uid !== state.user.uid && !u.blocked && !state.blocks[u.uid]) {
+      targets.push({ icon: "user", label: `${u.displayName || "User"} (@${u.username || "user"})`, user: u });
+    }
+  });
+  if (!targets.length) return toast("No users available to share with.");
+
+  openActionSheet(targets.slice(0, 20).map((t) => ({
+    icon: t.icon, label: t.label,
+    onClick: async () => {
+      if (t.convId) await forwardTextToConv(t.convId, m.text, null);
+      else {
+        const cid = personalConvId(state.user.uid, t.user.uid), cRef = ref(db, `conversations/${cid}`);
+        let exists = !!state.conversations[cid];
+        if (!exists) { try { exists = (await get(cRef)).exists(); } catch (_) { exists = false; } }
+        if (!exists) {
+          await set(cRef, {
+            id: cid, type: "personal", businessId: "", participants: { [state.user.uid]: true, [t.user.uid]: true },
+            participantMeta: {
+              [state.user.uid]: { name: state.profile?.displayName || "User", username: state.profile?.username || "user", color: state.profile?.avatarColor || "#0038d8" },
+              [t.user.uid]: { name: t.user.displayName || "User", username: t.user.username || "", color: t.user.avatarColor || "#0038d8" }
+            },
+            lastMessage: "", lastSenderId: "", lastTimestamp: Date.now(), unread: { [state.user.uid]: 0, [t.user.uid]: 0 }
+          });
+        }
+        await set(ref(db, `userConversations/${state.user.uid}/${cid}`), true);
+        await set(ref(db, `userConversations/${t.user.uid}/${cid}`), true).catch(() => {});
+        await forwardTextToConv(cid, m.text, t.user.uid);
+      }
+      toast("Shared to " + t.label);
+    }
+  })), "Share Message To");
+}
+
+async function forwardTextToConv(cid, text, peerId) {
+  const uid = state.user.uid, myName = state.profile?.displayName || "User";
+  const msgRef = push(ref(db, `messages/${cid}`)), ts = Date.now();
+  await set(msgRef, { id: msgRef.key, senderId: uid, text, timestamp: ts, status: "sent", isAuto: false, forwarded: true });
+  let conv = state.conversations[cid] || {};
+  try { const s = await get(ref(db, `conversations/${cid}`)); if (s.exists()) conv = s.val(); } catch (_) {}
+  if (conv.type === "group") {
+    const unreadUpdates = {};
+    Object.keys(conv.participants || {}).forEach((mid) => { if (mid !== uid) unreadUpdates[`unread/${mid}`] = (conv.unread?.[mid] || 0) + 1; });
+    await update(ref(db, `conversations/${cid}`), { lastMessage: `${myName}: ${text.slice(0, 60)}`, lastSenderId: uid, lastTimestamp: ts, ...unreadUpdates });
+  } else if (peerId) {
+    await update(ref(db, `conversations/${cid}`), { lastMessage: text.slice(0, 80), lastSenderId: uid, lastTimestamp: ts, [`unread/${peerId}`]: (conv.unread?.[peerId] || 0) + 1 });
+    await sendUserNotification(peerId, myName, `${myName} shared a message with you.`, "message", cid);
+  }
+}
+
+$("chat-messages-box").onscroll = () => {
+  const b = $("chat-messages-box");
+  $("btn-scroll-bottom").classList.toggle("hidden", b.scrollHeight - b.scrollTop - b.clientHeight < 120);
+};
+$("btn-scroll-bottom").onclick = () => $("chat-messages-box").scrollTo({ top: $("chat-messages-box").scrollHeight, behavior: "smooth" });
+$("btn-load-older").onclick = () => { state.msgLimit += 30; if (state.activeConvId) listenMessages(state.activeConvId); };
+$("btn-cancel-reply").onclick = () => { state.replyTo = null; $("reply-preview").classList.add("hidden"); };
+
+let typingTimer = null;
+$("msg-input").oninput = () => {
+  if (!state.activeConvId || !state.user || state.conversations[state.activeConvId]?.type === "group") return;
+  set(ref(db, `conversations/${state.activeConvId}/typing/${state.user.uid}`), true).catch(() => {});
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => {
+    if (state.activeConvId && state.user) set(ref(db, `conversations/${state.activeConvId}/typing/${state.user.uid}`), false).catch(() => {});
+  }, 1400);
+};
+
+$("form-send-msg").onsubmit = async (e) => {
+  e.preventDefault();
+  const text = $("msg-input").value.trim();
+  if (!text || !state.activeConvId) return;
+  if (text.length > 2000) return toast("Max 2000 characters.");
+
+  const cid = state.activeConvId, uid = state.user.uid, peerId = state.activePeerId;
+  const myName = state.profile?.displayName || state.user.email || "User";
+  const isOneTime = state.oneTimeComposer;
+  $("msg-input").value = "";
+
+  try {
+    if (isOneTime) {
+      state.oneTimeComposer = false; $("btn-onetime-toggle").classList.remove("active");
+      $("msg-input").placeholder = "Message or paste a video link...";
+    }
+    let conv = state.conversations[cid] || {};
+    try { const convSnap = await get(ref(db, `conversations/${cid}`)); if (convSnap.exists()) conv = convSnap.val(); } catch (_) {}
+    const isGroup = conv.type === "group", isFirstMsg = !conv.lastMessage;
+
+    const msgRef = push(ref(db, `messages/${cid}`));
+    const msgObj = {
+      id: msgRef.key, senderId: uid, text, timestamp: Date.now(), status: "sent", isAuto: false,
+      ...(isOneTime ? { oneTime: true, oneTimeOpened: false } : {})
+    };
+    if (state.replyTo && !isOneTime) msgObj.replyTo = state.replyTo;
+    state.replyTo = null; $("reply-preview").classList.add("hidden");
+    await set(msgRef, msgObj);
+
+    const previewTxt = isOneTime ? "One-time message" : text.slice(0, 80);
+    if (isGroup) {
+      const unreadUpdates = {}, members = Object.keys(conv.participants || {});
+      members.forEach((mid) => { if (mid !== uid) unreadUpdates[`unread/${mid}`] = (conv.unread?.[mid] || 0) + 1; });
+      await update(ref(db, `conversations/${cid}`), { lastMessage: `${myName}: ${previewTxt.slice(0, 60)}`, lastSenderId: uid, lastTimestamp: msgObj.timestamp, ...unreadUpdates });
+      members.slice(0, 20).forEach((mid) => { if (mid !== uid) sendUserNotification(mid, conv.groupName || "Group", `${myName}: ${previewTxt}`, "message", cid); });
+    } else if (peerId) {
+      await update(ref(db, `conversations/${cid}`), { lastMessage: previewTxt, lastSenderId: uid, lastTimestamp: msgObj.timestamp, [`unread/${peerId}`]: (conv.unread?.[peerId] || 0) + 1, [`typing/${uid}`]: false });
+      await set(ref(db, `userConversations/${uid}/${cid}`), true).catch(() => {});
+      await set(ref(db, `userConversations/${peerId}/${cid}`), true).catch(() => {});
+      await sendUserNotification(peerId, myName, `${myName} sent you a new message.`, "message", cid);
+
+      if (conv.type === "business" && conv.businessId && uid !== conv.businessId) {
+        try {
+          const bizSnap = await get(ref(db, `businessProfiles/${conv.businessId}`));
+          if (bizSnap.exists()) {
+            const biz = bizSnap.val();
+            if (biz.plan === "STARTER" || biz.plan === "PRO") {
+              const autoText = (biz.awayEnabled && biz.awayMsg) ? biz.awayMsg : (isFirstMsg && biz.welcomeMsg ? biz.welcomeMsg : "");
+              if (autoText) {
+                const aRef = push(ref(db, `messages/${cid}`));
+                await set(aRef, { id: aRef.key, senderId: conv.businessId, text: autoText, timestamp: Date.now() + 10, status: "sent", isAuto: true });
+              }
+            }
+          }
+        } catch (_) {}
+      }
+    }
+  } catch (err) {
+    $("msg-input").value = text;
+    toast("Failed to send message: " + err.message);
+  }
+};
+
+function leaveChatRoom() {
+  if (state.chatUnsub) { state.chatUnsub(); state.chatUnsub = null; }
+  if (peerStatusUnsub) { peerStatusUnsub(); peerStatusUnsub = null; }
+  if (convRoomUnsub) { convRoomUnsub(); convRoomUnsub = null; }
+  if (state.activeConvId && state.user && state.conversations[state.activeConvId]?.type !== "group") {
+    set(ref(db, `conversations/${state.activeConvId}/typing/${state.user.uid}`), false).catch(() => {});
+  }
+  state.activeConvId = null; state.activePeerId = null;
+}
+
+/* ================= BOTTOM ACTION SHEET ================= */
+function openActionSheet(items, title = "") {
+  const titleEl = $("action-sheet-title");
+  if (title) { titleEl.textContent = title; titleEl.classList.remove("hidden"); } else titleEl.classList.add("hidden");
+  const body = $("action-sheet-body"); body.innerHTML = "";
+  items.forEach((it) => {
+    const btn = el("button", `sheet-item ${it.danger ? "danger" : ""}`);
+    btn.innerHTML = iconSvg(it.icon, 20);
+    btn.appendChild(document.createTextNode(it.label));
+    btn.onclick = () => { closeActionSheet(); it.onClick(); };
+    body.appendChild(btn);
+  });
+  $("action-sheet-backdrop").classList.remove("hidden");
+}
+function closeActionSheet() { $("action-sheet-backdrop").classList.add("hidden"); }
+$("action-sheet-backdrop").onclick = (e) => { if (e.target === $("action-sheet-backdrop")) closeActionSheet(); };
+
+$("btn-chat-more").onclick = () => {
+  const cid = state.activeConvId; if (!cid) return;
+  const conv = state.conversations[cid];
+  if (conv?.type === "group") {
+    openActionSheet([
+      { icon: "users", label: "Group Info & Admin Settings", onClick: () => navigate("screen-group-info") },
+      { icon: "trash", label: "Delete Chat (for me)", onClick: async () => { await update(ref(db, `conversations/${cid}/deletedAt`), { [state.user.uid]: Date.now() }); toast("Chat cleared."); } },
+      { icon: "flag", label: "Leave Group", danger: true, onClick: async () => { await remove(ref(db, `conversations/${cid}/participants/${state.user.uid}`)); await remove(ref(db, `conversations/${cid}/admins/${state.user.uid}`)); await remove(ref(db, `userConversations/${state.user.uid}/${cid}`)); toast("Left group."); navigate("screen-home"); } }
+    ], conv.groupName);
+    return;
+  }
+  if (!state.activePeerId) return;
+  const peerId = state.activePeerId, peerName = $("topbar-title").textContent, isBlocked = !!state.blocks[peerId];
+  openActionSheet([
+    { icon: "user", label: "View Profile", onClick: () => openUserProfile(peerId) },
+    { icon: "block", label: isBlocked ? "Unblock User" : "Block User", onClick: () => toggleBlockUser(peerId, peerName) },
+    { icon: "flag", label: "Report User", onClick: () => openUserReportReasons(peerId) },
+    { icon: "trash", label: "Delete Chat", danger: true, onClick: async () => { await update(ref(db, `conversations/${cid}/deletedAt`), { [state.user.uid]: Date.now() }).catch(() => {}); await remove(ref(db, `userConversations/${state.user.uid}/${cid}`)).catch(() => {}); toast("Chat deleted."); navigate("screen-home"); } }
+  ], peerName);
+};
+
+async function submitReport(reason, msgObj = null, explicitUid = null) {
+  try {
+    const rRef = push(ref(db, "reports"));
+    await set(rRef, {
+      id: rRef.key, reporterUid: state.user.uid, reportedUid: msgObj ? msgObj.senderId : (explicitUid || state.activePeerId || ""),
+      reason, details: msgObj ? `MsgID: ${msgObj.id} | Text: ${msgObj.text.slice(0, 140)}` : `Conv: ${state.activeConvId || "Profile"}`,
+      status: "open", createdAt: Date.now()
+    });
+    toast("Report submitted to Ek Kotha safety team.");
+  } catch (err) { toast("Report failed: " + err.message); }
+}
+
+/* ================= WEBRTC AUDIO & VIDEO CALLING ================= */
+const ICE_CONFIG = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
+
+$("btn-chat-audio").onclick = () => { if (state.activePeerId) initiateCall(state.activePeerId, $("topbar-title").textContent, "audio"); };
+$("btn-chat-video").onclick = () => { if (state.activePeerId) initiateCall(state.activePeerId, $("topbar-title").textContent, "video"); };
+
+async function initiateCall(calleeId, calleeName, type) {
+  if (!calleeId) return;
+  if (state.activeCallId) return toast("Already in a call.");
+  if (state.blocks[calleeId]) return toast("Unblock user before calling.");
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return toast("Open in Chrome (HTTPS / localhost) for audio & video calls.");
+
+  try {
+    state.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === "video" });
+  } catch (_) {
+    return toast("Mic/Camera permission denied or blocked in WebView.");
+  }
+
+  const callRef = push(ref(db, "calls")), callId = callRef.key;
+  state.activeCallId = callId;
+  showActiveCallUI(calleeName, type, "Calling...");
+
+  try {
+    state.pc = new RTCPeerConnection(ICE_CONFIG);
+    state.localStream.getTracks().forEach((t) => state.pc.addTrack(t, state.localStream));
+    if (type === "video") $("local-video").srcObject = state.localStream;
+
+    state.pc.ontrack = (ev) => {
+      if (type === "video") $("remote-video").srcObject = ev.streams[0];
+      else $("remote-audio").srcObject = ev.streams[0];
+    };
+    state.pc.onicecandidate = (ev) => { if (ev.candidate) push(ref(db, `calls/${callId}/callerCandidates`), ev.candidate.toJSON()); };
+    state.pc.onconnectionstatechange = () => { if (state.pc?.connectionState === "failed") toast("Connection failed (TURN relay may be needed on mobile network)."); };
+
+    const offer = await state.pc.createOffer();
+    await state.pc.setLocalDescription(offer);
+    await set(callRef, {
+      id: callId, callerId: state.user.uid, callerName: state.profile?.displayName || "User",
+      calleeId, calleeName, type, status: "ringing", offer: { type: offer.type, sdp: offer.sdp }, createdAt: Date.now()
+    });
+    await sendUserNotification(calleeId, "Incoming Call", `${state.profile?.displayName || "Someone"} is calling (${type})`, "call");
+
+    const u1 = onValue(ref(db, `calls/${callId}`), async (snap) => {
+      const data = snap.val(); if (!data || !state.pc) return;
+      if (data.answer && !state.pc.currentRemoteDescription) {
+        await state.pc.setRemoteDescription(new RTCSessionDescription(data.answer)).catch(() => {});
+        startCallTimer();
+      }
+      if (data.status === "rejected" || data.status === "ended") {
+        await finishCallCleanup(callId, calleeId, calleeName, type, "outgoing", data.status === "rejected" ? "rejected" : "ended");
+      }
+    });
+    const u2 = onValue(ref(db, `calls/${callId}/calleeCandidates`), (snap) => {
+      snap.forEach((c) => { if (state.pc) state.pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {}); });
+    });
+    state.callUnsubs.push(u1, u2);
+  } catch (err) {
+    toast("Call failed: " + err.message);
+    await finishCallCleanup(callId, "", calleeName, type, "outgoing", "failed");
+  }
+}
+
+function subscribeCalls(uid) {
+  const q = query(ref(db, "calls"), orderByChild("calleeId"), equalTo(uid));
+  const unsub = onValue(q, (snap) => {
+    let incoming = null;
+    snap.forEach((c) => { const v = c.val(); if (v.status === "ringing" && (Date.now() - v.createdAt < 60000)) incoming = v; });
+    if (incoming && !state.activeCallId) {
+      state.incomingCallData = incoming;
+      $("inc-call-type").textContent = incoming.type === "video" ? "VIDEO CALL" : "AUDIO CALL";
+      $("inc-call-name").textContent = incoming.callerName;
+      $("inc-call-avatar").textContent = initials(incoming.callerName);
+      $("overlay-incoming").classList.remove("hidden");
+    } else if (!incoming) {
+      $("overlay-incoming").classList.add("hidden");
+      state.incomingCallData = null;
+    }
+  });
+  state.unsubs.push(unsub);
+}
+
+$("btn-reject-call").onclick = async () => {
+  const call = state.incomingCallData; $("overlay-incoming").classList.add("hidden");
+  if (!call) return;
+  await update(ref(db, `calls/${call.id}`), { status: "rejected" }).catch(() => {});
+  await logCallRecord(state.user.uid, call.id, call.callerId, call.callerName, call.type, "incoming", "rejected", 0);
+};
+
+$("btn-accept-call").onclick = async () => {
+  const call = state.incomingCallData; if (!call) return;
+  $("overlay-incoming").classList.add("hidden");
+  try {
+    state.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: call.type === "video" });
+  } catch (_) {
+    await update(ref(db, `calls/${call.id}`), { status: "rejected" }).catch(() => {});
+    return toast("Microphone/Camera permission denied.");
+  }
+
+  state.activeCallId = call.id;
+  showActiveCallUI(call.callerName, call.type, "Connecting...");
+  try {
+    state.pc = new RTCPeerConnection(ICE_CONFIG);
+    state.localStream.getTracks().forEach((t) => state.pc.addTrack(t, state.localStream));
+    if (call.type === "video") $("local-video").srcObject = state.localStream;
+    state.pc.ontrack = (ev) => {
+      if (call.type === "video") $("remote-video").srcObject = ev.streams[0];
+      else $("remote-audio").srcObject = ev.streams[0];
+    };
+    state.pc.onicecandidate = (ev) => { if (ev.candidate) push(ref(db, `calls/${call.id}/calleeCandidates`), ev.candidate.toJSON()); };
+
+    await state.pc.setRemoteDescription(new RTCSessionDescription(call.offer));
+    const answer = await state.pc.createAnswer();
+    await state.pc.setLocalDescription(answer);
+    await update(ref(db, `calls/${call.id}`), { answer: { type: answer.type, sdp: answer.sdp }, status: "accepted" });
+    startCallTimer();
+
+    const u1 = onValue(ref(db, `calls/${call.id}/callerCandidates`), (snap) => {
+      snap.forEach((c) => { if (state.pc) state.pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {}); });
+    });
+    const u2 = onValue(ref(db, `calls/${call.id}/status`), (s) => {
+      if (s.val() === "ended") finishCallCleanup(call.id, call.callerId, call.callerName, call.type, "incoming", "ended");
+    });
+    state.callUnsubs.push(u1, u2);
+  } catch (err) {
+    toast("Call error: " + err.message);
+    await finishCallCleanup(call.id, "", call.callerName, call.type, "incoming", "failed");
+  }
+};
+
+$("btn-end-call").onclick = async () => {
+  if (!state.activeCallId) return;
+  const cid = state.activeCallId;
+  let c = null; try { c = (await get(ref(db, `calls/${cid}`))).val(); } catch (_) {}
+  await update(ref(db, `calls/${cid}`), { status: "ended" }).catch(() => {});
+  if (c) {
+    const isCaller = c.callerId === state.user.uid, status = state.callSeconds > 0 ? "ended" : "missed";
+    if (isCaller && status === "missed") await sendUserNotification(c.calleeId, "Missed Call", `You missed a ${c.type} call from ${state.profile?.displayName || "User"}.`, "call");
+    await finishCallCleanup(cid, isCaller ? c.calleeId : c.callerId, isCaller ? c.calleeName : c.callerName, c.type, isCaller ? "outgoing" : "incoming", status);
+  } else await finishCallCleanup(cid, "", "Peer", "audio", "outgoing", "ended");
+};
+
+function showActiveCallUI(name, type, status) {
+  $("act-call-name").textContent = name; $("act-call-avatar").textContent = initials(name); $("act-call-status").textContent = status;
+  $("video-stage").classList.toggle("hidden", type !== "video");
+  $("audio-stage").classList.toggle("hidden", type === "video");
+  $("btn-toggle-cam").classList.toggle("hidden", type !== "video");
+  $("overlay-active-call").classList.remove("hidden");
+}
+
+function startCallTimer() {
+  clearInterval(state.callTimerInt); state.callSeconds = 0;
+  state.callTimerInt = setInterval(() => {
+    state.callSeconds++;
+    $("act-call-status").textContent = `${String(Math.floor(state.callSeconds / 60)).padStart(2, "0")}:${String(state.callSeconds % 60).padStart(2, "0")}`;
+  }, 1000);
+}
+
+$("btn-toggle-mic").onclick = () => {
+  const track = state.localStream?.getAudioTracks()[0]; if (!track) return;
+  track.enabled = !track.enabled; $("btn-toggle-mic").classList.toggle("active", !track.enabled);
+};
+$("btn-toggle-cam").onclick = () => {
+  const track = state.localStream?.getVideoTracks()[0]; if (!track) return;
+  track.enabled = !track.enabled; $("btn-toggle-cam").classList.toggle("active", !track.enabled);
+};
+
+async function finishCallCleanup(callId, peerId, peerName, type, direction, status) {
+  const dur = state.callSeconds;
+  clearInterval(state.callTimerInt); state.callSeconds = 0;
+  state.callUnsubs.forEach((u) => u()); state.callUnsubs = [];
+  if (state.localStream) { state.localStream.getTracks().forEach((t) => t.stop()); state.localStream = null; }
+  if (state.pc) { state.pc.close(); state.pc = null; }
+  $("remote-video").srcObject = null; $("local-video").srcObject = null; $("remote-audio").srcObject = null;
+  $("overlay-active-call").classList.add("hidden");
+  if (state.activeCallId) {
+    state.activeCallId = null;
+    if (peerId) await logCallRecord(state.user.uid, callId, peerId, peerName, type, direction, status, dur);
+    setTimeout(() => remove(ref(db, `calls/${callId}`)).catch(() => {}), 2500);
+  }
+}
+
+async function logCallRecord(uid, callId, peerId, peerName, type, direction, status, durationSec) {
+  try {
+    const rRef = push(ref(db, `callHistory/${uid}`));
+    await set(rRef, { id: rRef.key, callId, peerId, peerName, type, direction, status, durationSec, timestamp: Date.now() });
+  } catch (_) {}
+}
+
+function subscribeCallHistory(uid) {
+  const unsub = onValue(query(ref(db, `callHistory/${uid}`), limitToLast(30)), (snap) => {
+    const box = $("call-history-list"); box.innerHTML = "";
+    const list = []; snap.forEach((c) => list.push(c.val()));
+    if (!list.length) { box.appendChild(el("div", "muted text-center", "No call history yet.")); return; }
+    list.reverse().forEach((r) => {
+      const item = el("div", "list-item");
+      const av = el("div", "avatar"); av.innerHTML = iconSvg(r.type === "video" ? "video" : "phone", 20);
+      av.style.background = r.status === "missed" || r.status === "rejected" ? "var(--danger)" : "var(--primary)";
+      const body = el("div", "list-body");
+      body.appendChild(el("div", "list-title", r.peerName || "User"));
+      body.appendChild(el("div", "list-sub", `${r.direction} • ${r.status} • ${r.durationSec || 0}s • ${fmtTime(r.timestamp)}`));
+      const btn = el("button", "btn btn-sm btn-soft"); btn.innerHTML = iconSvg(r.type === "video" ? "video" : "phone", 16);
+      btn.onclick = (e) => { e.stopPropagation(); initiateCall(r.peerId, r.peerName, r.type); };
+      item.append(av, body, btn);
+      item.onclick = () => { if (r.peerId) openUserProfile(r.peerId); };
+      box.appendChild(item);
+    });
+  });
+  state.unsubs.push(unsub);
+}
+
+/* ================= BUSINESS SYSTEM ================= */
+async function loadBusinessDirectory() {
+  const qText = ($("biz-search-input").value || "").trim().toLowerCase(), box = $("biz-dir-list");
+  box.innerHTML = "";
+  try {
+    const snap = await get(ref(db, "businessProfiles")), items = [];
+    snap.forEach((c) => {
+      const b = c.val(); if (!b) return;
+      if (!qText || (b.name || "").toLowerCase().includes(qText) || (b.category || "").toLowerCase().includes(qText)) items.push(b);
+    });
+    if (!items.length) { box.appendChild(el("div", "muted text-center", "No businesses listed yet.")); return; }
+    items.forEach((b) => {
+      const row = el("div", "list-item");
+      const av = el("div", "avatar", initials(b.name)); av.style.background = pickColor(b.username || b.name);
+      const body = el("div", "list-body");
+      const title = el("div", "list-title"); title.appendChild(document.createTextNode(b.name || "Business"));
+      if (b.verified) { const vSpan = el("span"); vSpan.style.color = "var(--primary)"; vSpan.innerHTML = iconSvg("verified", 16); title.appendChild(vSpan); }
+      body.append(title, el("div", "list-sub", `${b.category || "Business"} • ${b.location || "Bangladesh"}`));
+      row.append(av, body); row.onclick = () => openBusinessProfile(b); box.appendChild(row);
+    });
+  } catch (_) { box.appendChild(el("div", "muted text-center", "Could not load businesses.")); }
+}
+$("biz-search-input").oninput = loadBusinessDirectory;
+
+function openBusinessProfile(b) {
+  const box = $("biz-profile-content"); box.innerHTML = "";
+  const card = el("div", "card");
+  const title = el("h2", "list-title", b.name || "Business"); title.style.fontSize = "1.25rem";
+  if (b.verified) { const vSpan = el("span"); vSpan.style.color = "var(--primary)"; vSpan.innerHTML = iconSvg("verified", 18); title.appendChild(vSpan); }
+  card.appendChild(title);
+  card.appendChild(el("div", "muted", `@${b.username || "biz"} • ${b.category || "Other"}`));
+  const desc = el("p", "", b.description || "No description provided."); desc.style.margin = "12px 0"; card.appendChild(desc);
+  card.appendChild(el("div", "list-sub", `Location: ${b.location || "-"}`));
+  card.appendChild(el("div", "list-sub", `Hours: ${b.hours || "-"}`));
+  card.appendChild(el("div", "list-sub", `Contact: ${b.contact || "-"}`));
+  if (b.ownerUid && b.ownerUid !== state.user.uid) {
+    const btn = el("button", "btn", "Message Business"); btn.style.marginTop = "14px";
+    btn.onclick = () => startBusinessChat(b); card.appendChild(btn);
+  }
+  box.appendChild(card); navigate("screen-business-profile");
+}
+
+async function startBusinessChat(b) {
+  const uid = state.user.uid, cid = bizConvId(b.ownerUid, uid), cRef = ref(db, `conversations/${cid}`);
+  let exists = !!state.conversations[cid];
+  if (!exists) { try { exists = (await get(cRef)).exists(); } catch (_) { exists = false; } }
+  if (!exists) {
+    await set(cRef, {
+      id: cid, type: "business", businessId: b.ownerUid, participants: { [uid]: true, [b.ownerUid]: true },
+      participantMeta: {
+        [uid]: { name: state.profile?.displayName || "User", username: state.profile?.username || "user", color: state.profile?.avatarColor || "#0038d8" },
+        [b.ownerUid]: { name: b.name, username: b.username, color: pickColor(b.username) }
+      },
+      lastMessage: "", lastSenderId: "", lastTimestamp: Date.now(), unread: { [uid]: 0, [b.ownerUid]: 0 }
+    });
+  }
+  await set(ref(db, `userConversations/${uid}/${cid}`), true);
+  await set(ref(db, `userConversations/${b.ownerUid}/${cid}`), true).catch(() => {});
+  openChatRoom(cid, b.ownerUid);
+}
+
+async function loadBusinessDashboard() {
+  const uid = state.user.uid, bizConvs = Object.values(state.conversations).filter((c) => c.type === "business" && c.businessId === uid);
+  $("biz-stat-customers").textContent = bizConvs.length;
+  $("biz-stat-unread").textContent = bizConvs.reduce((acc, c) => acc + (c.unread?.[uid] || 0), 0);
+  try {
+    const snap = await get(ref(db, `businessProfiles/${uid}`));
+    if (snap.exists()) {
+      const b = snap.val();
+      $("biz-current-plan").textContent = b.plan || "FREE";
+      $("biz-name").value = b.name || ""; $("biz-username").value = b.username || "";
+      $("biz-category").value = b.category || "Other"; $("biz-contact").value = b.contact || "";
+      $("biz-location").value = b.location || ""; $("biz-hours").value = b.hours || "";
+      $("biz-desc").value = b.description || ""; $("biz-welcome").value = b.welcomeMsg || "";
+      $("biz-away").value = b.awayMsg || ""; $("biz-away-enabled").checked = !!b.awayEnabled;
+      renderQuickReplies(b.quickReplies || {});
+    } else { $("biz-current-plan").textContent = "FREE"; $("biz-qr-list").innerHTML = ""; }
+  } catch (_) {}
+}
+
+$("form-biz-profile").onsubmit = async (e) => {
+  e.preventDefault();
+  const btn = $("btn-biz-save"); btn.disabled = true;
+  try {
+    const uid = state.user.uid;
+    let existing = null; try { existing = (await get(ref(db, `businessProfiles/${uid}`))).val(); } catch (_) {}
+    await set(ref(db, `businessProfiles/${uid}`), {
+      ownerUid: uid, name: $("biz-name").value.trim(), username: $("biz-username").value.trim().toLowerCase(),
+      category: $("biz-category").value, contact: $("biz-contact").value.trim(),
+      location: $("biz-location").value.trim(), hours: $("biz-hours").value.trim(),
+      description: $("biz-desc").value.trim(), welcomeMsg: $("biz-welcome").value.trim(),
+      awayMsg: $("biz-away").value.trim(), awayEnabled: $("biz-away-enabled").checked,
+      verified: existing ? !!existing.verified : false, plan: existing ? existing.plan : "FREE",
+      quickReplies: existing?.quickReplies || {}, createdAt: existing ? existing.createdAt : Date.now()
+    });
+    toast("Business profile saved!");
+  } catch (err) { toast("Save failed: " + err.message); }
+  finally { btn.disabled = false; }
+};
+
+function renderQuickReplies(qr) {
+  const box = $("biz-qr-list"); box.innerHTML = "";
+  Object.entries(qr).forEach(([k, v]) => {
+    const row = el("div", "list-top"); row.style.padding = "6px 0";
+    row.appendChild(el("div", "muted", `${v.title}: ${v.text}`));
+    const del = el("button", "btn btn-sm btn-danger"); del.innerHTML = iconSvg("x", 14);
+    del.onclick = async () => { await remove(ref(db, `businessProfiles/${state.user.uid}/quickReplies/${k}`)); loadBusinessDashboard(); };
+    row.appendChild(del); box.appendChild(row);
+  });
+}
+
+$("btn-add-qr").onclick = async () => {
+  const title = $("qr-title").value.trim(), text = $("qr-text").value.trim();
+  if (!title || !text) return toast("Enter title and reply text.");
+  if (!(await get(ref(db, `businessProfiles/${state.user.uid}`))).exists()) return toast("Save your business profile first.");
+  await push(ref(db, `businessProfiles/${state.user.uid}/quickReplies`), { title, text });
+  $("qr-title").value = ""; $("qr-text").value = ""; loadBusinessDashboard();
+};
+
+/* ================= SUBSCRIPTIONS & MANUAL bKash ================= */
+function renderPlans() {
+  const prices = state.adminSettings.plans || { FREE: 0, STARTER: 299, PRO: 799 };
+  const plans = [
+    { id: "FREE", price: prices.FREE || 0, feats: ["Basic business profile", "Limited customer chats", "Basic messaging"] },
+    { id: "STARTER", price: prices.STARTER || 299, feats: ["More customer conversations", "Quick replies", "Welcome & Away messages", "Basic statistics"] },
+    { id: "PRO", price: prices.PRO || 799, feats: ["Advanced statistics", "Customer labels", "Priority business support"] }
+  ];
+  const box = $("plans-container"); box.innerHTML = "";
+  plans.forEach((p) => {
+    const card = el("div", "card"); card.appendChild(el("h3", "", `${p.id} — ${p.price} BDT / month`));
+    const ul = el("ul"); ul.style.margin = "8px 0 12px 18px";
+    p.feats.forEach((f) => ul.appendChild(el("li", "muted", f))); card.appendChild(ul);
+    if (p.id !== "FREE") {
+      const btn = el("button", "btn btn-sm", `Select ${p.id}`);
+      btn.onclick = () => { state.selectedPlanForPay = p.id; navigate("screen-payment"); };
+      card.appendChild(btn);
+    }
+    box.appendChild(card);
+  });
+}
+
+$("btn-copy-bkash").onclick = async () => {
+  const num = $("pay-bkash-number").textContent.trim();
+  try { await navigator.clipboard.writeText(num); toast("bKash number copied!"); } catch (_) { toast("Copy number: " + num); }
+};
+
+async function loadPaymentScreen() {
+  const num = state.adminSettings.bkashNumber || "01999809730", prices = state.adminSettings.plans || { STARTER: 299, PRO: 799 };
+  $("pay-bkash-number").textContent = num; $("pay-plan-name").textContent = state.selectedPlanForPay;
+  $("pay-plan-amount").textContent = `${prices[state.selectedPlanForPay] || 0} BDT`;
+
+  const box = $("my-payments-list"); box.innerHTML = "";
+  const savedIds = JSON.parse(localStorage.getItem(`ek_pay_ids_${state.user.uid}`) || "[]");
+  if (!savedIds.length) { box.appendChild(el("div", "muted", "No payment requests submitted.")); return; }
+  const snaps = await Promise.all(savedIds.map((id) => get(ref(db, `paymentRequests/${id}`)).catch(() => null)));
+  const items = snaps.filter((s) => s && s.exists()).map((s) => s.val());
+  if (!items.length) { box.appendChild(el("div", "muted", "No payment requests found.")); return; }
+  items.reverse().forEach((r) => {
+    const c = el("div", "card-soft");
+    c.appendChild(el("div", "list-title", `${r.plan} (${r.amount} BDT) — ${r.status.toUpperCase()}`));
+    c.appendChild(el("div", "muted", `TrxID: ${r.trxId} • From: ${r.senderNumber}`));
+    box.appendChild(c);
+  });
+}
+
+$("form-payment").onsubmit = async (e) => {
+  e.preventDefault();
+  const btn = $("btn-pay-submit"); btn.disabled = true;
+  try {
+    const senderNumber = $("pay-sender").value.trim(), trxId = $("pay-trxid").value.trim().toUpperCase();
+    const plan = state.selectedPlanForPay, amount = (state.adminSettings.plans || {})[plan] || 299;
+    const reqRef = push(ref(db, "paymentRequests"));
+    await set(reqRef, {
+      id: reqRef.key, uid: state.user.uid, userName: state.profile?.displayName || "User", plan, amount, senderNumber, trxId,
+      bkashTarget: state.adminSettings.bkashNumber || "01999809730", status: "pending", createdAt: Date.now(), reviewedAt: 0, reviewedBy: ""
+    });
+    const key = `ek_pay_ids_${state.user.uid}`, ids = JSON.parse(localStorage.getItem(key) || "[]");
+    ids.push(reqRef.key); localStorage.setItem(key, JSON.stringify(ids));
+    $("form-payment").reset();
+    toast("Payment request submitted! Awaiting admin verification.");
+    loadPaymentScreen();
+  } catch (err) { toast("Payment submit failed: " + err.message); }
+  finally { btn.disabled = false; }
+};
+
+/* ================= PROFILE & SETTINGS ================= */
+function renderSettingsScreen() {
+  updatePushStatusUI();
+  if (state.profile) {
+    $("set-prof-avatar").textContent = initials(state.profile.displayName);
+    $("set-prof-avatar").style.background = state.profile.avatarColor || "#0038d8";
+    $("set-prof-name").textContent = state.profile.displayName || "User";
+    $("set-prof-sub").textContent = `@${state.profile.username || "user"} • ${state.profile.status || "Available"}`;
+  }
+}
+
+async function renderProfileScreen() {
+  if (!state.profile) return;
+  $("prof-avatar").textContent = initials(state.profile.displayName);
+  $("prof-avatar").style.background = state.profile.avatarColor || "#0038d8";
+  $("prof-name").textContent = state.profile.displayName || "User";
+  $("prof-username").textContent = `@${state.profile.username || "user"}`;
+  $("prof-status").textContent = state.profile.status || "Available";
+  $("edit-name").value = state.profile.displayName || "";
+  $("edit-status").value = state.profile.status || "";
+
+  const bBox = $("blocked-users-list"); bBox.innerHTML = "";
+  const ids = Object.keys(state.blocks || {});
+  if (!ids.length) { bBox.appendChild(el("div", "muted", "No blocked users.")); return; }
+  for (const bid of ids) {
+    let u = state.usersCache[bid];
+    if (!u) { try { u = (await get(ref(db, `users/${bid}`))).val(); } catch (_) {} }
+    if (!u) u = { displayName: bid };
+    const row = el("div", "list-item");
+    row.appendChild(el("div", "list-body", u.displayName || bid));
+    const btn = el("button", "btn btn-sm btn-soft", "Unblock");
+    btn.onclick = async (e) => { e.stopPropagation(); await remove(ref(db, `userBlocks/${state.user.uid}/${bid}`)); toast("Unblocked"); renderProfileScreen(); };
+    row.appendChild(btn); row.onclick = () => openUserProfile(bid); bBox.appendChild(row);
+  }
+}
+
+$("form-profile").onsubmit = async (e) => {
+  e.preventDefault();
+  const displayName = $("edit-name").value.trim(), status = $("edit-status").value.trim();
+  if (!displayName) return toast("Display name cannot be empty.");
+  const btn = $("btn-prof-save"); btn.disabled = true;
+  try {
+    await update(ref(db, `users/${state.user.uid}`), { displayName, status });
+    state.profile.displayName = displayName; state.profile.status = status;
+    toast("Profile updated!"); renderProfileScreen(); renderSettingsScreen();
+  } catch (err) { toast("Update failed: " + err.message); }
+  finally { btn.disabled = false; }
+};
+</script>
+</body>
+</html>
